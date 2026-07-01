@@ -4,7 +4,7 @@
 // These talk directly to Appwrite — no fake storage here.
 // ============================================================
 
-import { account, ID } from "./appwrite.js";
+import { account, ID } from "/js/appwrite.js";
 
 // ---- SIGN UP ----
 export async function signUp(name, email, password) {

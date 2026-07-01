@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medchanic.md — Sign up</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="auth-page">
@@ -46,16 +46,16 @@
     <button class="btn-primary" id="signupBtn" onclick="handleSignup()">Create account</button>
 
     <div class="auth-foot">
-      Already have an account? <a href="../index.html">Log in</a>
+      Already have an account? <a href="/index.html">Log in</a>
     </div>
   </div>
 </div>
 
 <script type="module">
-  import { signUp, getCurrentUser } from "../js/auth.js";
+  import { signUp, getCurrentUser } from "/js/auth.js";
 
   getCurrentUser().then(user => {
-    if (user) window.location.href = "dashboard.html";
+    if (user) window.location.href = "/pages/dashboard.html";
   });
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,7 +115,7 @@
 
     try {
       await signUp(name, email, password);
-      window.location.href = "dashboard.html";
+      window.location.href = "/pages/dashboard.html";
     } catch (err) {
       btn.disabled = false;
       btn.textContent = "Create account";
