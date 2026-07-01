@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medchanic.md — Sign up</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="mark">⚙</span>
+      <span class="name">MEDCHANIC.MD</span>
+    </div>
+    <div class="auth-sub">Create your account.</div>
+
+    <div class="form-banner" id="banner"></div>
+
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="name" placeholder="Jane Doe" autocomplete="name">
+      <div class="field-error" id="nameError"></div>
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@school.edu" autocomplete="email">
+      <div class="field-error" id="emailError"></div>
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="At least 8 characters"
+        autocomplete="new-password" oninput="checkStrength()">
+      <div class="pw-strength" id="pwStrength"></div>
+      <div class="field-error" id="passwordError"></div>
+    </div>
+
+    <div class="field">
+      <label>Confirm password</label>
+      <input type="password" id="passwordConfirm" placeholder="••••••••" autocomplete="new-password">
+      <div class="field-error" id="passwordConfirmError"></div>
+    </div>
+
+    <button class="btn-primary" id="signupBtn" onclick="handleSignup()">Create account</button>
+
+    <div class="auth-foot">
+      Already have an account? <a href="../index.html">Log in</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { signUp, getCurrentUser } from "../js/auth.js";
+
+  getCurrentUser().then(user => {
+    if (user) window.location.href = "dashboard.html";
+  });
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  window.checkStrength = function() {
+    const pw = document.getElementById("password").value;
+    const el = document.getElementById("pwStrength");
+    if (!pw) { el.textContent = ""; return; }
+    if (pw.length < 8) {
+      el.textContent = "Too short — minimum 8 characters.";
+      el.style.color = "var(--incorrect)";
+      return;
+    }
+    const strong = pw.length >= 12 && /[0-9]/.test(pw) && /[A-Za-z]/.test(pw);
+    el.textContent = strong ? "Strong password ✓" : "Okay — try adding numbers or more characters.";
+    el.style.color = strong ? "var(--correct)" : "var(--ink-faint)";
+  };
+
+  function showBanner(msg, type) {
+    const el = document.getElementById("banner");
+    el.textContent = msg;
+    el.className = `form-banner show ${type}`;
+  }
+
+  function fieldError(inputId, errorId, msg) {
+    document.getElementById(inputId).classList.add("invalid");
+    const el = document.getElementById(errorId);
+    el.textContent = msg;
+    el.classList.add("show");
+  }
+
+  function clearErrors() {
+    document.querySelectorAll(".field-error").forEach(e => e.classList.remove("show"));
+    document.querySelectorAll(".field input").forEach(e => e.classList.remove("invalid"));
+    const b = document.getElementById("banner");
+    b.classList.remove("show", "error", "success");
+    b.textContent = "";
+  }
+
+  window.handleSignup = async function() {
+    clearErrors();
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirm = document.getElementById("passwordConfirm").value;
+    const btn = document.getElementById("signupBtn");
+
+    let hasError = false;
+    if (!name) { fieldError("name", "nameError", "Enter your name."); hasError = true; }
+    if (!EMAIL_RE.test(email)) { fieldError("email", "emailError", "Enter a valid email address."); hasError = true; }
+    if (password.length < 8) { fieldError("password", "passwordError", "Password must be at least 8 characters."); hasError = true; }
+    if (confirm !== password) { fieldError("passwordConfirm", "passwordConfirmError", "Passwords don't match."); hasError = true; }
+    if (hasError) return;
+
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+
+    try {
+      await signUp(name, email, password);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Create account";
+      if (err.code === 409) {
+        showBanner("An account with that email already exists. Try logging in instead.", "error");
+      } else {
+        showBanner("Something went wrong. Please try again.", "error");
+        console.error(err);
+      }
+    }
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter") window.handleSignup();
+  });
+</script>
+</body>
+</html>
