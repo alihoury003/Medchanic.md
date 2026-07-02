@@ -4,12 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medchanic.md — Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
-    .dashboard-page {
-      min-height: 100vh;
-      background: var(--paper);
-    }
+    .dashboard-page { min-height: 100vh; background: var(--paper); }
     .topbar {
       display: flex;
       align-items: center;
@@ -46,25 +43,15 @@
       cursor: pointer;
     }
     .btn-logout:hover { border-color: var(--incorrect); color: var(--incorrect); }
-
     .dash-content {
       max-width: 780px;
       margin: 60px auto;
       padding: 0 28px;
       text-align: center;
     }
-    .dash-content h1 {
-      font-family: var(--serif);
-      font-size: 30px;
-      margin-bottom: 8px;
-    }
+    .dash-content h1 { font-family: var(--serif); font-size: 30px; margin-bottom: 8px; }
     .dash-content h1 .accent { color: var(--clinical-blue); }
-    .dash-content .sub {
-      font-family: var(--sans);
-      font-size: 15px;
-      color: var(--ink-soft);
-      margin-bottom: 40px;
-    }
+    .dash-content .sub { font-family: var(--sans); font-size: 15px; color: var(--ink-soft); margin-bottom: 40px; }
     .coming-soon {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -75,7 +62,7 @@
       color: var(--ink-faint);
     }
     .coming-soon .icon { font-size: 32px; margin-bottom: 12px; }
-    .coming-soon p { line-height: 1.6; }
+    .coming-soon p { line-height: 1.8; }
   </style>
 </head>
 <body>
@@ -91,31 +78,31 @@
   <div class="dash-content">
     <h1>Welcome back<span class="accent">.</span></h1>
     <p class="sub" id="dashSub">Loading your dashboard…</p>
-
     <div class="coming-soon">
       <div class="icon">⚙</div>
-      <p>Your full dashboard — score ring, QBank, create test, previous tests — is being wired in now.<br><br>
-      You're successfully logged in and authenticated via Appwrite. The question bank and full interface will be connected to this account system shortly.</p>
+      <p>
+        You're signed in and authenticated via Appwrite.<br><br>
+        The full QBank dashboard — score ring, create test, previous tests, question blocks — is being connected to this account system now and will be live shortly.
+      </p>
     </div>
   </div>
 </div>
 
 <script type="module">
-  import { getCurrentUser, logOut } from "/js/auth.js";
+  import { getCurrentUser, logOut } from "./auth.js";
 
-  // Guard: if not logged in, send back to login
   const user = await getCurrentUser();
   if (!user) {
-    window.location.href = "/index.html";
+    window.location.href = "index.html";
   } else {
     const firstName = user.name ? user.name.split(" ")[0] : user.email;
-    document.getElementById("userGreeting").textContent = `${user.name || user.email}`;
+    document.getElementById("userGreeting").textContent = user.name || user.email;
     document.getElementById("dashSub").textContent = `Good to see you, ${firstName}.`;
   }
 
-  window.handleLogout = async function() {
+  window.handleLogout = async function () {
     await logOut();
-    window.location.href = "/index.html";
+    window.location.href = "index.html";
   };
 </script>
 </body>
