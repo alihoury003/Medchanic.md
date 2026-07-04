@@ -986,6 +986,8 @@
 </div>
 
 <script type="module">
+import { Client, Account, ID } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
+
 /* ===================== QUESTION BANK ===================== */
 const SUBJECTS = ["Anatomy","Behavioral Science","Biochemistry","Biostatistics","Embryology","Genetics","Histology","Immunology","Microbiology","Pathology","Pathophysiology","Pharmacology","Physiology"];
 const SYSTEMS = ["Allergy & Immunology","Dermatology","Cardiovascular System","Pulmonary & Critical Care","Gastrointestinal & Nutrition","Hematology & Oncology","Renal, Urinary Systems & Electrolytes","Nervous System","Rheumatology/Orthopedics & Sports","Infectious Diseases","Endocrine, Diabetes & Metabolism","Female Reproductive System & Breast","Male Reproductive System","Pregnancy, Childbirth & Puerperium","Biostatistics & Epidemiology","Ear, Nose & Throat (ENT)","Psychiatric/Behavioral & Substance Use Disorder","Poisoning & Environmental Exposure","Ophthalmology","Social Sciences (Ethics/Legal/Professional)","Miscellaneous (Multisystem)","Biochemistry (General Principles)","Genetics (General Principles)","Microbiology (General Principles)","Pathology (General Principles)","Pharmacology (General Principles)"];
@@ -1112,7 +1114,6 @@ function goScreen(name) {
 }
 
 /* ===================== APPWRITE AUTH ===================== */
-import { Client, Account, ID } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 const _client = new Client()
   .setEndpoint("https://nyc.cloud.appwrite.io/v1")
@@ -1148,14 +1149,12 @@ function goScreen(name) {
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Check if user is logged in via Appwrite session
   try {
     currentUser = await _account.get();
     updateUserPill();
-    await loadUserData(currentUser.email);
+    loadUserData(currentUser.email);
     goScreen('dashboard');
   } catch (err) {
-    // Not logged in — redirect to login page
     window.location.href = 'index.html';
   }
 });
