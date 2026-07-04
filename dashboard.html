@@ -1130,20 +1130,10 @@ function updateUserPill() {
 }
 
 async function doLogout() {
-  try { await _account.deleteSession('current'); } catch (e) { /* already gone */ }
+  try { await _account.deleteSession('current'); } catch (e) {}
   currentUser = null;
   clearLocalUserData();
   window.location.href = 'index.html';
-}
-
-/* ===================== NAVIGATION ===================== */
-function goScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  document.querySelectorAll('.app-nav button').forEach(b => b.classList.toggle('active', b.dataset.nav === name));
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'create') renderCreateScreen();
-  if (name === 'tests') renderTestsList();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
