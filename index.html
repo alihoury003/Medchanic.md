@@ -41,18 +41,23 @@
 </div>
 
 <script type="module">
-  import { logIn, getCurrentUser } from "./auth.js";
+  import { Client, Account } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
-  getCurrentUser().then(user => {
-    if (user) window.location.href = "dashboard.html";
-  });
+  const client = new Client()
+    .setEndpoint("https://nyc.cloud.appwrite.io/v1")
+    .setProject("6a427cd000140ae72eb1");
+  const account = new Account(client);
+
+  // Always kill any stale session on the login page
+  // so users never get auto-redirected unexpectedly
+  try { await account.deleteSession("current"); } catch (e) { /* no session, fine */ }
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   function showBanner(msg, type) {
     const el = document.getElementById("banner");
     el.textContent = msg;
-    el.className = `form-banner show ${type}`;
+    el.className = "form-banner show " + type;
   }
 
   function fieldError(inputId, errorId, msg) {
@@ -66,11 +71,11 @@
     document.querySelectorAll(".field-error").forEach(e => e.classList.remove("show"));
     document.querySelectorAll(".field input").forEach(e => e.classList.remove("invalid"));
     const b = document.getElementById("banner");
-    b.classList.remove("show", "error", "success");
+    b.className = "form-banner";
     b.textContent = "";
   }
 
-  window.handleLogin = async function () {
+  window.handleLogin = async function() {
     clearErrors();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
@@ -85,7 +90,7 @@
     btn.textContent = "Logging in…";
 
     try {
-      await logIn(email, password);
+      await account.createEmailPasswordSession(email, password);
       window.location.href = "dashboard.html";
     } catch (err) {
       btn.disabled = false;
@@ -93,16 +98,15 @@
       if (err.code === 401) {
         showBanner("Incorrect email or password. Try again.", "error");
       } else if (err.code === 404) {
-        showBanner("No account found with that email. Try signing up instead.", "error");
+        showBanner("No account found with that email. Try signing up.", "error");
       } else {
         showBanner("Something went wrong. Please try again.", "error");
+        console.error(err);
       }
     }
   };
 
-  document.addEventListener("keydown", e => {
-    if (e.key === "Enter") window.handleLogin();
-  });
+  document.addEventListener("keydown", e => { if (e.key === "Enter") window.handleLogin(); });
 </script>
 </body>
 </html>
