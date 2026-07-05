@@ -1340,9 +1340,9 @@ function toggleMode() {
 }
 
 function selectChoice(letter) {
-  if (!activeBlock.isNew) return; // reviewing past test: read-only
-  activeBlock.answers[current] = letter;
+  if (!activeBlock.isNew) return;
   const qid = activeBlock.qIds[current];
+  activeBlock.answers[qid] = letter;
   if (!usedQuestionIds.has(qid)) {
     usedQuestionIds.add(qid);
     saveUserUsed();
@@ -1367,7 +1367,7 @@ function exitBlockToDashboard() {
 function renderBlockQuestion() {
   const qid = activeBlock.qIds[current];
   const q = questionBank.find(qq => qq.id === qid);
-  const userAnswer = activeBlock.answers[current];
+  const userAnswer = activeBlock.answers[qid];
   const showExplanation = (tutorMode && userAnswer) || !activeBlock.isNew;
 
   document.getElementById('itemCounter').textContent = `Item ${current+1} of ${activeBlock.qIds.length}`;
@@ -1433,9 +1433,9 @@ function goToItem(idx) { current = idx; renderBlockQuestion(); }
 function finishBlock() {
   clearInterval(timerInterval);
   let score = 0;
-  activeBlock.qIds.forEach((qid, i) => {
+  activeBlock.qIds.forEach(qid => {
     const q = questionBank.find(qq => qq.id === qid);
-    if (activeBlock.answers[i] === q.correct) score++;
+    if (activeBlock.answers[qid] === q.correct) score++;
   });
   const total = activeBlock.qIds.length;
 
@@ -1452,7 +1452,6 @@ function finishBlock() {
   document.getElementById('scoreSummary').style.display = 'block';
   document.getElementById('scoreBig').textContent = `${score}/${total}`;
 
-  // lock the block into review-like state but stay on this screen so they can see it
   activeBlock.isNew = false;
   renderBlockQuestion();
 }
@@ -1461,7 +1460,7 @@ function renderNav() {
   const grid = document.getElementById('navGrid');
   grid.innerHTML = activeBlock.qIds.map((qid, i) => {
     const q = questionBank.find(qq => qq.id === qid);
-    const ans = activeBlock.answers[i];
+    const ans = activeBlock.answers[qid];
     let cls = 'nav-item';
     if (i === current) cls += ' current';
     if (ans) cls += ' answered';
