@@ -573,6 +573,72 @@
     .test-date, .test-meta-sub { display: none; }
     .labvals-popup { left: 16px; right: 16px; top: 56px; width: auto; }
   }
+  /* ============ PERFORMANCE BREAKDOWN BY SUBJECT ============ */
+  .perf-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+  .perf-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .perf-card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+  }
+  .perf-card-sub {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .perf-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 52px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .perf-label {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .perf-bar-track {
+    height: 8px;
+    background: var(--omitted-soft);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .perf-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .perf-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+  }
+  .perf-empty {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 16px 0 4px;
+  }
+
   /* ============ ADMIN PANEL ============ */
   .admin-overlay {
     position: fixed; inset: 0;
@@ -724,6 +790,16 @@
         <span><span class="dot" style="background:var(--clinical-blue)"></span><strong id="usedCount">0</strong> used</span>
         <span><span class="dot" style="background:var(--omitted-soft);border:1px solid var(--line)"></span><strong id="unusedCount">0</strong> unused</span>
         <span>of <strong id="totalCount">0</strong> total questions</span>
+      </div>
+    </div>
+
+    <div class="perf-card" id="perfCard">
+      <div class="perf-card-header">
+        <span class="perf-card-title">Performance by subject</span>
+        <span class="perf-card-sub" id="perfCardSub"></span>
+      </div>
+      <div id="perfBreakdown">
+        <div class="perf-empty">Complete a test block to see your breakdown.</div>
       </div>
     </div>
 
@@ -1325,16 +1401,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ===================== DASHBOARD ===================== */
 function renderDashboard() {
   let correct = 0, incorrect = 0, omitted = 0, totalAnswered = 0;
+
+  // Per-subject tracking: { subject: { correct, total } }
+  const bySubject = {};
+
   pastTests.forEach(t => {
     t.qIds.forEach(qid => {
       const q = questionBank.find(qq => qq.id === qid);
+      if (!q) return;
       const ans = t.answers[qid];
-      if (!ans) { omitted++; }
-      else if (ans === q.correct) { correct++; }
-      else { incorrect++; }
+
+      // Global stats
+      if (!ans) omitted++;
+      else if (ans === q.correct) correct++;
+      else incorrect++;
       totalAnswered++;
+
+      // Per-subject stats (only count answered questions, not omitted)
+      if (ans) {
+        if (!bySubject[q.subject]) bySubject[q.subject] = { correct: 0, total: 0 };
+        bySubject[q.subject].total++;
+        if (ans === q.correct) bySubject[q.subject].correct++;
+      }
     });
   });
+
   const pct = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 0;
 
   document.getElementById('statCorrect').textContent = correct;
@@ -1354,6 +1445,42 @@ function renderDashboard() {
   document.getElementById('unusedCount').textContent = unused;
   document.getElementById('totalCount').textContent = total;
   document.getElementById('usageBarFill').style.width = total > 0 ? `${(used/total)*100}%` : '0%';
+
+  // Render per-subject performance breakdown
+  const subjects = Object.keys(bySubject);
+  const perfEl = document.getElementById('perfBreakdown');
+  const perfSub = document.getElementById('perfCardSub');
+
+  if (subjects.length === 0) {
+    perfEl.innerHTML = '<div class="perf-empty">Complete a test block to see your breakdown.</div>';
+    perfSub.textContent = '';
+    return;
+  }
+
+  // Sort by % correct ascending (weakest subjects first — most actionable)
+  subjects.sort((a, b) => {
+    const pctA = bySubject[a].correct / bySubject[a].total;
+    const pctB = bySubject[b].correct / bySubject[b].total;
+    return pctA - pctB;
+  });
+
+  perfSub.textContent = `${subjects.length} subject${subjects.length > 1 ? 's' : ''} · weakest first`;
+
+  perfEl.innerHTML = subjects.map(subj => {
+    const { correct: c, total: t } = bySubject[subj];
+    const p = Math.round((c / t) * 100);
+    let barColor = 'var(--correct)';
+    if (p < 60) barColor = 'var(--incorrect)';
+    else if (p < 80) barColor = 'var(--flag)';
+    return `<div class="perf-row">
+      <div class="perf-label" title="${subj}">${subj}</div>
+      <div class="perf-bar-track">
+        <div class="perf-bar-fill" style="width:${p}%;background:${barColor}"></div>
+      </div>
+      <div class="perf-pct" style="color:${barColor}">${p}%</div>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding-left:152px;margin-top:-6px;margin-bottom:8px;">${c}/${t} answered</div>`;
+  }).join('');
 }
 
 /* ===================== RESET ===================== */
