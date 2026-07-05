@@ -1081,7 +1081,7 @@
 </div>
 
 <script type="module">
-import { Client, Account, ID } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
+import { Client, Account, Databases, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 /* ===================== QUESTION BANK ===================== */
 const SUBJECTS = ["Anatomy","Behavioral Science","Biochemistry","Biostatistics","Embryology","Genetics","Histology","Immunology","Microbiology","Pathology","Pathophysiology","Pharmacology","Physiology"];
@@ -1208,13 +1208,17 @@ function goScreen(name) {
   if (name === 'tests') renderTestsList();
 }
 
-/* ===================== APPWRITE AUTH ===================== */
+/* ===================== APPWRITE AUTH + DATABASE ===================== */
+
+const APPWRITE_DB_ID  = '6a4adf000035f990a7e7';
+const APPWRITE_COL_ID = 'questions';
 
 const _client = new Client()
   .setEndpoint("https://nyc.cloud.appwrite.io/v1")
   .setProject("6a427cd000140ae72eb1");
 
-const _account = new Account(_client);
+const _account   = new Account(_client);
+const _databases = new Databases(_client);
 
 let currentUser = null;
 
@@ -1231,6 +1235,42 @@ async function doLogout() {
   window.location.href = 'index.html';
 }
 
+// Convert a flat database row back into a full question object
+function unpackQuestion(doc) {
+  let content = {};
+  try { content = JSON.parse(doc.content); } catch (e) {}
+  return {
+    id: doc.$id,
+    subject: doc.subject,
+    system: doc.system,
+    stem: doc.stem,
+    question: doc.stem.split('\n').filter(l => l.trim()).pop(),
+    correct: doc.correct,
+    objective: doc.objective,
+    choices:  content.choices  || [],
+    rationale: content.rationale || '',
+    whyWrong:  content.whyWrong  || [],
+    used: false
+  };
+}
+
+// Load all questions from Appwrite database into the live bank
+async function loadDatabaseQuestions() {
+  try {
+    const res = await _databases.listDocuments(
+      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(500)]
+    );
+    res.documents.forEach(doc => {
+      if (!questionBank.find(q => q.id === doc.$id)) {
+        questionBank.push(unpackQuestion(doc));
+      }
+    });
+    console.log(`Loaded ${res.documents.length} questions from database. Bank total: ${questionBank.length}`);
+  } catch (err) {
+    console.error('Could not load questions from database:', err);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -1238,6 +1278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUser = await _account.get();
     updateUserPill();
     loadUserData(currentUser.email);
+    await loadDatabaseQuestions();
     goScreen('dashboard');
   } catch (err) {
     window.location.href = 'index.html';
@@ -1669,40 +1710,13 @@ Object.assign(window, {
 const ADMIN_EMAIL = 'medchanicmd@gmail.com';
 let adminCorrectAnswer = null;
 
-// Merge any admin-added questions into the live bank
-function loadAdminQuestions() {
-  try {
-    const stored = localStorage.getItem('mc_admin_questions');
-    if (!stored) return;
-    const adminQs = JSON.parse(stored);
-    adminQs.forEach(q => {
-      if (!questionBank.find(existing => existing.id === q.id)) {
-        questionBank.push(q);
-      }
-    });
-  } catch (err) {}
-}
-
-function getAdminQuestions() {
-  try {
-    const stored = localStorage.getItem('mc_admin_questions');
-    return stored ? JSON.parse(stored) : [];
-  } catch (err) { return []; }
-}
-
-function saveAdminQuestions(questions) {
-  localStorage.setItem('mc_admin_questions', JSON.stringify(questions));
-}
-
 function openAdmin() {
-  // Gate: only open for the admin email
   if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
 
-  // Populate subject and system dropdowns
   const subjEl = document.getElementById('aSubject');
-  const sysEl = document.getElementById('aSystem');
+  const sysEl  = document.getElementById('aSystem');
   subjEl.innerHTML = SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
-  sysEl.innerHTML = SYSTEMS.map(s => `<option value="${s}">${s}</option>`).join('');
+  sysEl.innerHTML  = SYSTEMS.map(s  => `<option value="${s}">${s}</option>`).join('');
 
   adminCorrectAnswer = null;
   document.querySelectorAll('.admin-correct-btn').forEach(b => b.classList.remove('selected'));
@@ -1724,9 +1738,7 @@ function selectCorrect(letter) {
 }
 
 function clearAdminForm() {
-  ['aStem','aObjective','aRationale'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  ['aStem','aObjective','aRationale'].forEach(id => document.getElementById(id).value = '');
   ['A','B','C','D','E'].forEach(l => {
     document.getElementById('aC_' + l).value = '';
     document.getElementById('aW_' + l).value = '';
@@ -1743,7 +1755,7 @@ function showAdminBanner(msg, type) {
   el.className = 'admin-banner show ' + type;
 }
 
-function adminSaveQuestion() {
+async function adminSaveQuestion() {
   const stem      = document.getElementById('aStem').value.trim();
   const subject   = document.getElementById('aSubject').value;
   const system    = document.getElementById('aSystem').value;
@@ -1757,63 +1769,82 @@ function adminSaveQuestion() {
     .filter(l => l !== adminCorrectAnswer)
     .map(l => ({ letter: l, text: document.getElementById('aW_' + l).value.trim() }));
 
-  // Validate
-  if (!stem)            { showAdminBanner('Question stem is required.', 'error'); return; }
+  if (!stem)               { showAdminBanner('Question stem is required.', 'error'); return; }
   if (!adminCorrectAnswer) { showAdminBanner('Select the correct answer.', 'error'); return; }
   if (choices.some(c => !c.text)) { showAdminBanner('All 5 answer choices are required.', 'error'); return; }
-  if (!objective)       { showAdminBanner('Learning objective is required.', 'error'); return; }
-  if (!rationale)       { showAdminBanner('Explanation is required.', 'error'); return; }
+  if (!objective)          { showAdminBanner('Learning objective is required.', 'error'); return; }
+  if (!rationale)          { showAdminBanner('Explanation is required.', 'error'); return; }
 
-  const question = {
-    id: 'admin_' + Date.now(),
-    subject, system, used: false,
-    stem, question: stem.split('\n').pop(), // last line as the actual question
-    choices,
-    correct: adminCorrectAnswer,
-    objective,
-    rationale: `<p>${rationale.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
-    whyWrong
-  };
+  const rationaleHTML = `<p>${rationale.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</p>`;
+  const content = JSON.stringify({ choices, rationale: rationaleHTML, whyWrong });
 
-  // Save to localStorage
-  const existing = getAdminQuestions();
-  existing.push(question);
-  saveAdminQuestions(existing);
-
-  // Add to live bank immediately without reload
-  questionBank.push(question);
-
-  showAdminBanner(`Question saved! Bank now has ${questionBank.length} questions.`, 'success');
-  clearAdminForm();
-  renderAdminQList();
-}
-
-function adminDeleteQuestion(id) {
-  if (!confirm('Delete this question? This cannot be undone.')) return;
-  const updated = getAdminQuestions().filter(q => q.id !== id);
-  saveAdminQuestions(updated);
-  const idx = questionBank.findIndex(q => q.id === id);
-  if (idx !== -1) questionBank.splice(idx, 1);
-  renderAdminQList();
-}
-
-function renderAdminQList() {
-  const questions = getAdminQuestions();
-  document.getElementById('adminQCount').textContent = questions.length;
-  const wrap = document.getElementById('adminQList');
-  if (questions.length === 0) {
-    wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">No questions added yet.</div>';
+  if (content.length > 5000) {
+    showAdminBanner(`Content too long (${content.length} chars). Shorten the explanation or wrong-answer reasons.`, 'error');
     return;
   }
-  wrap.innerHTML = questions.map(q => `
-    <div class="admin-qrow">
-      <div class="admin-qrow-meta">
-        <div class="admin-qrow-stem">${q.stem.substring(0, 120)}${q.stem.length > 120 ? '…' : ''}</div>
-        <div class="admin-qrow-tags">${q.subject} · ${q.system} · Correct: ${q.correct}</div>
+
+  const btn = document.getElementById('adminSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const doc = await _databases.createDocument(
+      APPWRITE_DB_ID, APPWRITE_COL_ID,
+      ID.unique(),
+      { subject, system, stem, correct: adminCorrectAnswer, objective, content }
+    );
+
+    // Add to live bank immediately
+    questionBank.push(unpackQuestion(doc));
+
+    showAdminBanner(`✓ Saved! Bank now has ${questionBank.length} questions.`, 'success');
+    clearAdminForm();
+    renderAdminQList();
+  } catch (err) {
+    showAdminBanner('Save failed: ' + (err.message || 'Unknown error'), 'error');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save question to bank';
+  }
+}
+
+async function adminDeleteQuestion(id) {
+  if (!confirm('Delete this question? This cannot be undone.')) return;
+  try {
+    await _databases.deleteDocument(APPWRITE_DB_ID, APPWRITE_COL_ID, id);
+    const idx = questionBank.findIndex(q => q.id === id);
+    if (idx !== -1) questionBank.splice(idx, 1);
+    renderAdminQList();
+  } catch (err) {
+    alert('Delete failed: ' + (err.message || 'Unknown error'));
+  }
+}
+
+async function renderAdminQList() {
+  const wrap = document.getElementById('adminQList');
+  wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">Loading…</div>';
+  try {
+    const res = await _databases.listDocuments(
+      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(500)]
+    );
+    document.getElementById('adminQCount').textContent = res.documents.length;
+    if (res.documents.length === 0) {
+      wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">No questions in database yet.</div>';
+      return;
+    }
+    wrap.innerHTML = res.documents.map(doc => `
+      <div class="admin-qrow">
+        <div class="admin-qrow-meta">
+          <div class="admin-qrow-stem">${doc.stem.substring(0,120)}${doc.stem.length > 120 ? '…' : ''}</div>
+          <div class="admin-qrow-tags">${doc.subject} · ${doc.system} · Correct: ${doc.correct}</div>
+        </div>
+        <button class="admin-qrow-del" onclick="adminDeleteQuestion('${doc.$id}')" title="Delete">✕</button>
       </div>
-      <button class="admin-qrow-del" onclick="adminDeleteQuestion('${q.id}')" title="Delete">✕</button>
-    </div>
-  `).join('');
+    `).join('');
+  } catch (err) {
+    wrap.innerHTML = '<div style="color:var(--incorrect);font-family:var(--sans);font-size:13px;">Could not load questions.</div>';
+  }
 }
 
 // Secret keyboard shortcut: Ctrl + Shift + M
@@ -1823,9 +1854,6 @@ document.addEventListener('keydown', e => {
     openAdmin();
   }
 });
-
-// Load admin questions into the bank on startup
-loadAdminQuestions();
 </script>
 
 <!-- ===================== ADMIN PANEL ===================== -->
