@@ -573,6 +573,101 @@
     .test-date, .test-meta-sub { display: none; }
     .labvals-popup { left: 16px; right: 16px; top: 56px; width: auto; }
   }
+  /* ============ ADMIN PANEL ============ */
+  .admin-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,12,16,0.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 500; padding: 20px;
+  }
+  .admin-overlay.show { display: flex; }
+  .admin-panel {
+    background: #13161C;
+    border: 1px solid #2A2E38;
+    border-radius: 10px;
+    width: 100%; max-width: 780px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  }
+  .admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid #2A2E38;
+    position: sticky; top: 0; background: #13161C; z-index: 1;
+  }
+  .admin-header h2 {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--clinical-blue); text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
+  }
+  .admin-header .admin-close {
+    background: none; border: none; color: #5B6270; font-size: 18px; cursor: pointer;
+  }
+  .admin-header .admin-close:hover { color: var(--paper); }
+  .admin-body { padding: 24px; }
+  .admin-field { margin-bottom: 18px; }
+  .admin-field label {
+    display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: #5B6270; margin-bottom: 7px;
+  }
+  .admin-field input, .admin-field select, .admin-field textarea {
+    width: 100%; background: #1C2028; border: 1px solid #2A2E38;
+    color: var(--paper); font-family: var(--sans); font-size: 14px;
+    padding: 10px 12px; border-radius: 4px; line-height: 1.5;
+  }
+  .admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus {
+    border-color: var(--clinical-blue); outline: none;
+  }
+  .admin-field textarea { resize: vertical; min-height: 90px; }
+  .admin-field select option { background: #1C2028; }
+  .admin-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .admin-choices { display: flex; flex-direction: column; gap: 8px; }
+  .admin-choice-row { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; }
+  .admin-choice-letter {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: #5B6270; text-align: center;
+  }
+  .admin-correct-row { display: flex; gap: 8px; margin-top: 4px; }
+  .admin-correct-btn {
+    flex: 1; padding: 8px; background: #1C2028; border: 1px solid #2A2E38;
+    color: #5B6270; font-family: var(--mono); font-size: 13px; font-weight: 700;
+    border-radius: 4px; cursor: pointer;
+  }
+  .admin-correct-btn.selected {
+    background: var(--correct-soft); border-color: var(--correct); color: var(--correct);
+  }
+  .admin-divider { border: none; border-top: 1px solid #2A2E38; margin: 22px 0; }
+  .admin-save-btn {
+    width: 100%; padding: 12px; background: var(--clinical-blue); color: white;
+    border: none; border-radius: 4px; font-family: var(--sans); font-weight: 700;
+    font-size: 14px; cursor: pointer; margin-top: 8px;
+  }
+  .admin-save-btn:hover { background: var(--clinical-blue-dark); }
+  .admin-save-btn:disabled { background: #2A2E38; color: #5B6270; cursor: not-allowed; }
+  .admin-banner {
+    font-family: var(--sans); font-size: 13px; padding: 10px 12px;
+    border-radius: 4px; margin-bottom: 18px; display: none;
+  }
+  .admin-banner.show { display: block; }
+  .admin-banner.success { background: var(--correct-soft); color: var(--correct); }
+  .admin-banner.error { background: var(--incorrect-soft); color: var(--incorrect); }
+  .admin-qlist { margin-top: 28px; }
+  .admin-qlist-title {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: #5B6270; margin-bottom: 12px;
+  }
+  .admin-qrow {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    background: #1C2028; border: 1px solid #2A2E38; border-radius: 4px;
+    padding: 12px 14px; margin-bottom: 8px; gap: 12px;
+  }
+  .admin-qrow-meta { flex: 1; }
+  .admin-qrow-stem { font-family: var(--sans); font-size: 13px; color: var(--paper); line-height: 1.5; }
+  .admin-qrow-tags { font-family: var(--mono); font-size: 11px; color: #5B6270; margin-top: 4px; }
+  .admin-qrow-del {
+    background: none; border: none; color: #5B6270; font-size: 15px; cursor: pointer; padding: 2px 6px;
+  }
+  .admin-qrow-del:hover { color: var(--incorrect); }
 </style>
 </head>
 <body>
@@ -1566,9 +1661,254 @@ Object.assign(window, {
   renderCreateScreen, toggleTag, toggleSelectAll, updateQCount, generateTest,
   reviewTest, goToItem, finishBlock, exitBlockToDashboard,
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
-  applyHighlight, renderTestsList
+  applyHighlight, renderTestsList,
+  closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion
 });
+
+/* ===================== ADMIN PANEL ===================== */
+const ADMIN_EMAIL = 'medchanicmd@gmail.com';
+let adminCorrectAnswer = null;
+
+// Merge any admin-added questions into the live bank
+function loadAdminQuestions() {
+  try {
+    const stored = localStorage.getItem('mc_admin_questions');
+    if (!stored) return;
+    const adminQs = JSON.parse(stored);
+    adminQs.forEach(q => {
+      if (!questionBank.find(existing => existing.id === q.id)) {
+        questionBank.push(q);
+      }
+    });
+  } catch (err) {}
+}
+
+function getAdminQuestions() {
+  try {
+    const stored = localStorage.getItem('mc_admin_questions');
+    return stored ? JSON.parse(stored) : [];
+  } catch (err) { return []; }
+}
+
+function saveAdminQuestions(questions) {
+  localStorage.setItem('mc_admin_questions', JSON.stringify(questions));
+}
+
+function openAdmin() {
+  // Gate: only open for the admin email
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+
+  // Populate subject and system dropdowns
+  const subjEl = document.getElementById('aSubject');
+  const sysEl = document.getElementById('aSystem');
+  subjEl.innerHTML = SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+  sysEl.innerHTML = SYSTEMS.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  adminCorrectAnswer = null;
+  document.querySelectorAll('.admin-correct-btn').forEach(b => b.classList.remove('selected'));
+  clearAdminForm();
+  renderAdminQList();
+
+  document.getElementById('adminOverlay').classList.add('show');
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('show');
+}
+
+function selectCorrect(letter) {
+  adminCorrectAnswer = letter;
+  document.querySelectorAll('.admin-correct-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.letter === letter);
+  });
+}
+
+function clearAdminForm() {
+  ['aStem','aObjective','aRationale'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['A','B','C','D','E'].forEach(l => {
+    document.getElementById('aC_' + l).value = '';
+    document.getElementById('aW_' + l).value = '';
+  });
+  adminCorrectAnswer = null;
+  document.querySelectorAll('.admin-correct-btn').forEach(b => b.classList.remove('selected'));
+  const b = document.getElementById('adminBanner');
+  b.className = 'admin-banner'; b.textContent = '';
+}
+
+function showAdminBanner(msg, type) {
+  const el = document.getElementById('adminBanner');
+  el.textContent = msg;
+  el.className = 'admin-banner show ' + type;
+}
+
+function adminSaveQuestion() {
+  const stem      = document.getElementById('aStem').value.trim();
+  const subject   = document.getElementById('aSubject').value;
+  const system    = document.getElementById('aSystem').value;
+  const objective = document.getElementById('aObjective').value.trim();
+  const rationale = document.getElementById('aRationale').value.trim();
+
+  const choices = ['A','B','C','D','E'].map(l => ({
+    letter: l, text: document.getElementById('aC_' + l).value.trim()
+  }));
+  const whyWrong = ['A','B','C','D','E']
+    .filter(l => l !== adminCorrectAnswer)
+    .map(l => ({ letter: l, text: document.getElementById('aW_' + l).value.trim() }));
+
+  // Validate
+  if (!stem)            { showAdminBanner('Question stem is required.', 'error'); return; }
+  if (!adminCorrectAnswer) { showAdminBanner('Select the correct answer.', 'error'); return; }
+  if (choices.some(c => !c.text)) { showAdminBanner('All 5 answer choices are required.', 'error'); return; }
+  if (!objective)       { showAdminBanner('Learning objective is required.', 'error'); return; }
+  if (!rationale)       { showAdminBanner('Explanation is required.', 'error'); return; }
+
+  const question = {
+    id: 'admin_' + Date.now(),
+    subject, system, used: false,
+    stem, question: stem.split('\n').pop(), // last line as the actual question
+    choices,
+    correct: adminCorrectAnswer,
+    objective,
+    rationale: `<p>${rationale.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
+    whyWrong
+  };
+
+  // Save to localStorage
+  const existing = getAdminQuestions();
+  existing.push(question);
+  saveAdminQuestions(existing);
+
+  // Add to live bank immediately without reload
+  questionBank.push(question);
+
+  showAdminBanner(`Question saved! Bank now has ${questionBank.length} questions.`, 'success');
+  clearAdminForm();
+  renderAdminQList();
+}
+
+function adminDeleteQuestion(id) {
+  if (!confirm('Delete this question? This cannot be undone.')) return;
+  const updated = getAdminQuestions().filter(q => q.id !== id);
+  saveAdminQuestions(updated);
+  const idx = questionBank.findIndex(q => q.id === id);
+  if (idx !== -1) questionBank.splice(idx, 1);
+  renderAdminQList();
+}
+
+function renderAdminQList() {
+  const questions = getAdminQuestions();
+  document.getElementById('adminQCount').textContent = questions.length;
+  const wrap = document.getElementById('adminQList');
+  if (questions.length === 0) {
+    wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">No questions added yet.</div>';
+    return;
+  }
+  wrap.innerHTML = questions.map(q => `
+    <div class="admin-qrow">
+      <div class="admin-qrow-meta">
+        <div class="admin-qrow-stem">${q.stem.substring(0, 120)}${q.stem.length > 120 ? '…' : ''}</div>
+        <div class="admin-qrow-tags">${q.subject} · ${q.system} · Correct: ${q.correct}</div>
+      </div>
+      <button class="admin-qrow-del" onclick="adminDeleteQuestion('${q.id}')" title="Delete">✕</button>
+    </div>
+  `).join('');
+}
+
+// Secret keyboard shortcut: Ctrl + Shift + M
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'M') {
+    e.preventDefault();
+    openAdmin();
+  }
+});
+
+// Load admin questions into the bank on startup
+loadAdminQuestions();
 </script>
+
+<!-- ===================== ADMIN PANEL ===================== -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>⚙ Admin — Add Question</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+
+      <div class="admin-banner" id="adminBanner"></div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Subject</label>
+          <select id="aSubject"></select>
+        </div>
+        <div class="admin-field">
+          <label>Body System</label>
+          <select id="aSystem"></select>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Question stem (clinical vignette + question)</label>
+        <textarea id="aStem" placeholder="A 45-year-old man presents with..."></textarea>
+      </div>
+
+      <div class="admin-field">
+        <label>Answer choices</label>
+        <div class="admin-choices">
+          <div class="admin-choice-row"><span class="admin-choice-letter">A</span><input type="text" id="aC_A" placeholder="Choice A"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">B</span><input type="text" id="aC_B" placeholder="Choice B"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">C</span><input type="text" id="aC_C" placeholder="Choice C"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">D</span><input type="text" id="aC_D" placeholder="Choice D"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">E</span><input type="text" id="aC_E" placeholder="Choice E"></div>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Correct answer</label>
+        <div class="admin-correct-row" id="aCorrectRow">
+          <button class="admin-correct-btn" data-letter="A" onclick="selectCorrect('A')">A</button>
+          <button class="admin-correct-btn" data-letter="B" onclick="selectCorrect('B')">B</button>
+          <button class="admin-correct-btn" data-letter="C" onclick="selectCorrect('C')">C</button>
+          <button class="admin-correct-btn" data-letter="D" onclick="selectCorrect('D')">D</button>
+          <button class="admin-correct-btn" data-letter="E" onclick="selectCorrect('E')">E</button>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Learning objective (one line)</label>
+        <input type="text" id="aObjective" placeholder="Identify X as the cause of Y in a patient with Z">
+      </div>
+
+      <div class="admin-field">
+        <label>Full explanation (why correct answer is right)</label>
+        <textarea id="aRationale" style="min-height:120px;" placeholder="The correct answer is B because..."></textarea>
+      </div>
+
+      <div class="admin-field">
+        <label>Why each wrong answer is wrong</label>
+        <div class="admin-choices">
+          <div class="admin-choice-row"><span class="admin-choice-letter">A</span><input type="text" id="aW_A" placeholder="Why A is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">B</span><input type="text" id="aW_B" placeholder="Why B is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">C</span><input type="text" id="aW_C" placeholder="Why C is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">D</span><input type="text" id="aW_D" placeholder="Why D is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">E</span><input type="text" id="aW_E" placeholder="Why E is wrong"></div>
+        </div>
+      </div>
+
+      <button class="admin-save-btn" id="adminSaveBtn" onclick="adminSaveQuestion()">Save question to bank</button>
+
+      <hr class="admin-divider">
+
+      <div class="admin-qlist">
+        <div class="admin-qlist-title">Questions added via admin panel (<span id="adminQCount">0</span>)</div>
+        <div id="adminQList"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
