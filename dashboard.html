@@ -1163,30 +1163,67 @@ const questionBank = [
 let pastTests = [];
 let usedQuestionIds = new Set();
 
-function loadUserData(email) {
+/*
+  Student progress (test history + used question IDs) is stored in
+  Appwrite's built-in user preferences — a free JSON blob on every
+  account, no extra tables needed. Falls back to localStorage if the
+  Appwrite write fails, so nothing is ever lost silently.
+*/
+
+async function loadUserData() {
   try {
-    const t = localStorage.getItem(`mc_tests:${email.toLowerCase()}`);
-    pastTests = t ? JSON.parse(t) : [];
-  } catch (err) { pastTests = []; }
-  try {
-    const u = localStorage.getItem(`mc_used:${email.toLowerCase()}`);
-    usedQuestionIds = u ? new Set(JSON.parse(u)) : new Set();
-  } catch (err) { usedQuestionIds = new Set(); }
+    const prefs = await _account.getPrefs();
+    pastTests       = prefs.tests  ? JSON.parse(prefs.tests)  : [];
+    usedQuestionIds = prefs.used   ? new Set(JSON.parse(prefs.used)) : new Set();
+  } catch (err) {
+    // Fall back to localStorage if prefs unavailable
+    try {
+      const t = localStorage.getItem('mc_tests');
+      const u = localStorage.getItem('mc_used');
+      pastTests       = t ? JSON.parse(t) : [];
+      usedQuestionIds = u ? new Set(JSON.parse(u)) : new Set();
+    } catch (e) {
+      pastTests = []; usedQuestionIds = new Set();
+    }
+  }
 }
 
-function saveUserTests() {
+async function saveUserTests() {
   if (!currentUser) return;
-  try { localStorage.setItem(`mc_tests:${currentUser.email.toLowerCase()}`, JSON.stringify(pastTests)); } catch (err) {}
+  try {
+    const prefs = await _account.getPrefs();
+    prefs.tests = JSON.stringify(pastTests);
+    await _account.updatePrefs(prefs);
+  } catch (err) {
+    // fallback
+    try { localStorage.setItem('mc_tests', JSON.stringify(pastTests)); } catch (e) {}
+  }
 }
 
-function saveUserUsed() {
+async function saveUserUsed() {
   if (!currentUser) return;
-  try { localStorage.setItem(`mc_used:${currentUser.email.toLowerCase()}`, JSON.stringify([...usedQuestionIds])); } catch (err) {}
+  try {
+    const prefs = await _account.getPrefs();
+    prefs.used = JSON.stringify([...usedQuestionIds]);
+    await _account.updatePrefs(prefs);
+  } catch (err) {
+    try { localStorage.setItem('mc_used', JSON.stringify([...usedQuestionIds])); } catch (e) {}
+  }
 }
 
 function clearLocalUserData() {
   pastTests = [];
   usedQuestionIds = new Set();
+}
+
+async function clearAllUserProgress() {
+  pastTests = [];
+  usedQuestionIds = new Set();
+  try {
+    await _account.updatePrefs({ tests: '[]', used: '[]' });
+  } catch (err) {
+    try { localStorage.removeItem('mc_tests'); localStorage.removeItem('mc_used'); } catch (e) {}
+  }
 }
 
 let selectedSubjects = new Set();
@@ -1277,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     currentUser = await _account.get();
     updateUserPill();
-    loadUserData(currentUser.email);
+    await loadUserData();
     await loadDatabaseQuestions();
     goScreen('dashboard');
   } catch (err) {
@@ -1323,10 +1360,7 @@ function renderDashboard() {
 function openResetModal() { document.getElementById('resetModal').classList.add('show'); }
 function closeResetModal() { document.getElementById('resetModal').classList.remove('show'); }
 async function confirmReset() {
-  pastTests = [];
-  usedQuestionIds = new Set();
-  saveUserTests();
-  saveUserUsed();
+  await clearAllUserProgress();
   closeResetModal();
   renderDashboard();
 }
