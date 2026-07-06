@@ -803,6 +803,16 @@
       </div>
     </div>
 
+    <div class="perf-card" id="perfCardSystem">
+      <div class="perf-card-header">
+        <span class="perf-card-title">Performance by system</span>
+        <span class="perf-card-sub" id="perfCardSystemSub"></span>
+      </div>
+      <div id="perfBreakdownSystem">
+        <div class="perf-empty">Complete a test block to see your breakdown.</div>
+      </div>
+    </div>
+
     <div class="action-row">
       <div class="action-card primary" onclick="goScreen('create')">
         <div class="ac-icon">+</div>
@@ -1401,9 +1411,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ===================== DASHBOARD ===================== */
 function renderDashboard() {
   let correct = 0, incorrect = 0, omitted = 0, totalAnswered = 0;
-
-  // Per-subject tracking: { subject: { correct, total } }
   const bySubject = {};
+  const bySystem  = {};
 
   pastTests.forEach(t => {
     t.qIds.forEach(qid => {
@@ -1411,17 +1420,21 @@ function renderDashboard() {
       if (!q) return;
       const ans = t.answers[qid];
 
-      // Global stats
       if (!ans) omitted++;
       else if (ans === q.correct) correct++;
       else incorrect++;
       totalAnswered++;
 
-      // Per-subject stats (only count answered questions, not omitted)
       if (ans) {
+        // Subject
         if (!bySubject[q.subject]) bySubject[q.subject] = { correct: 0, total: 0 };
         bySubject[q.subject].total++;
         if (ans === q.correct) bySubject[q.subject].correct++;
+
+        // System
+        if (!bySystem[q.system]) bySystem[q.system] = { correct: 0, total: 0 };
+        bySystem[q.system].total++;
+        if (ans === q.correct) bySystem[q.system].correct++;
       }
     });
   });
@@ -1439,48 +1452,44 @@ function renderDashboard() {
   ring.setAttribute('stroke-dashoffset', (circumference * (1 - pct / 100)).toFixed(1));
 
   const total = questionBank.length;
-  const used = usedQuestionIds.size;
-  const unused = total - used;
-  document.getElementById('usedCount').textContent = used;
-  document.getElementById('unusedCount').textContent = unused;
-  document.getElementById('totalCount').textContent = total;
+  const used  = usedQuestionIds.size;
+  document.getElementById('usedCount').textContent   = used;
+  document.getElementById('unusedCount').textContent = total - used;
+  document.getElementById('totalCount').textContent  = total;
   document.getElementById('usageBarFill').style.width = total > 0 ? `${(used/total)*100}%` : '0%';
 
-  // Render per-subject performance breakdown
-  const subjects = Object.keys(bySubject);
-  const perfEl = document.getElementById('perfBreakdown');
-  const perfSub = document.getElementById('perfCardSub');
+  // Shared bar renderer — sorts weakest first
+  function renderPerfBars(dataObj, elId, subId) {
+    const el  = document.getElementById(elId);
+    const sub = document.getElementById(subId);
+    const keys = Object.keys(dataObj);
 
-  if (subjects.length === 0) {
-    perfEl.innerHTML = '<div class="perf-empty">Complete a test block to see your breakdown.</div>';
-    perfSub.textContent = '';
-    return;
+    if (keys.length === 0) {
+      el.innerHTML = '<div class="perf-empty">Complete a test block to see your breakdown.</div>';
+      sub.textContent = '';
+      return;
+    }
+
+    keys.sort((a, b) => (dataObj[a].correct / dataObj[a].total) - (dataObj[b].correct / dataObj[b].total));
+    sub.textContent = `${keys.length} ${keys.length > 1 ? 'entries' : 'entry'} · weakest first`;
+
+    el.innerHTML = keys.map(key => {
+      const { correct: c, total: t } = dataObj[key];
+      const p = Math.round((c / t) * 100);
+      const color = p < 60 ? 'var(--incorrect)' : p < 80 ? 'var(--flag)' : 'var(--correct)';
+      return `<div class="perf-row">
+        <div class="perf-label" title="${key}">${key}</div>
+        <div class="perf-bar-track">
+          <div class="perf-bar-fill" style="width:${p}%;background:${color}"></div>
+        </div>
+        <div class="perf-pct" style="color:${color}">${p}%</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding-left:152px;margin-top:-6px;margin-bottom:8px;">${c}/${t} answered</div>`;
+    }).join('');
   }
 
-  // Sort by % correct ascending (weakest subjects first — most actionable)
-  subjects.sort((a, b) => {
-    const pctA = bySubject[a].correct / bySubject[a].total;
-    const pctB = bySubject[b].correct / bySubject[b].total;
-    return pctA - pctB;
-  });
-
-  perfSub.textContent = `${subjects.length} subject${subjects.length > 1 ? 's' : ''} · weakest first`;
-
-  perfEl.innerHTML = subjects.map(subj => {
-    const { correct: c, total: t } = bySubject[subj];
-    const p = Math.round((c / t) * 100);
-    let barColor = 'var(--correct)';
-    if (p < 60) barColor = 'var(--incorrect)';
-    else if (p < 80) barColor = 'var(--flag)';
-    return `<div class="perf-row">
-      <div class="perf-label" title="${subj}">${subj}</div>
-      <div class="perf-bar-track">
-        <div class="perf-bar-fill" style="width:${p}%;background:${barColor}"></div>
-      </div>
-      <div class="perf-pct" style="color:${barColor}">${p}%</div>
-    </div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding-left:152px;margin-top:-6px;margin-bottom:8px;">${c}/${t} answered</div>`;
-  }).join('');
+  renderPerfBars(bySubject, 'perfBreakdown',       'perfCardSub');
+  renderPerfBars(bySystem,  'perfBreakdownSystem',  'perfCardSystemSub');
 }
 
 /* ===================== RESET ===================== */
