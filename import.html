@@ -58,7 +58,7 @@
     <div id="blocked" class="card hidden">
       <div class="card-b">
         <h1>Admin access required</h1>
-        <p>This importer only works when you are logged in as <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="adc0c8c9cec5ccc3c4cec0c9edcac0ccc4c183cec2c0">[email&#160;protected]</a></strong>.</p>
+        <p>This importer only works when you are logged in as <strong>medchanicmd@gmail.com</strong>.</p>
         <p><a href="index.html">Go to login</a></p>
       </div>
     </div>
@@ -79,7 +79,8 @@
           <div class="grid">
             <div>
               <label for="jsonInput">Questions JSON</label>
-              <textarea id="jsonInput" spellcheck="false" placeholder="Paste JSON here…"></textarea>
+              <input id="jsonFile" type="file" accept=".json,application/json" onchange="loadJsonFile(event)" style="margin-bottom:10px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif;" />
+              <textarea id="jsonInput" spellcheck="false" placeholder="Paste JSON here, or choose a .json file above…"></textarea>
               <div class="checkline">
                 <input id="skipDupes" type="checkbox" checked>
                 <span>Skip duplicate questions with exactly the same stem</span>
@@ -88,6 +89,8 @@
                 <button class="secondary" onclick="loadSample()">Load sample</button>
                 <button class="secondary" onclick="validateOnly()">Validate only</button>
                 <button class="primary" id="importBtn" onclick="importQuestions()">Import to database</button>
+                <button class="secondary" onclick="analyzeDuplicates()">Analyze duplicates</button>
+                <button class="danger" onclick="deleteDuplicateQuestions()">Delete duplicate rows</button>
                 <button class="danger" onclick="clearInput()">Clear</button>
               </div>
             </div>
@@ -134,8 +137,8 @@
     </div>
   </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
-import { Client, Account, Databases, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
+<script type="module">
+import { Client, Account, Databases, ID, Query, Permission, Role } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 const ENDPOINT = "https://nyc.cloud.appwrite.io/v1";
 const PROJECT_ID = "6a427cd000140ae72eb1";
@@ -155,12 +158,35 @@ const account = new Account(client);
 const databases = new Databases(client);
 
 let existingStems = new Set();
+let currentUser = null;
+
+async function listAllQuestionDocs() {
+  const limit = 500;
+  let offset = 0;
+  let all = [];
+  while (true) {
+    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [Query.limit(limit), Query.offset(offset)]);
+    all = all.concat(res.documents || []);
+    const total = typeof res.total === 'number' ? res.total : all.length;
+    if (!res.documents || res.documents.length === 0 || all.length >= total || res.documents.length < limit) break;
+    offset += res.documents.length;
+  }
+  return all;
+}
 
 const $ = id => document.getElementById(id);
 function log(msg) { $('status').textContent += `\n${msg}`; $('status').scrollTop = $('status').scrollHeight; }
 function setStatus(msg) { $('status').textContent = msg; }
 function showBox(id, msg) { $(id).textContent = msg; $(id).style.display = 'block'; }
 function hideBoxes() { $('okBox').style.display = 'none'; $('errBox').style.display = 'none'; }
+function normalizeStemForDedupe(stem='') {
+  return String(stem)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .trim();
+}
 function escapeHtml(str='') { return String(str).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function textToHtml(str='') { return `<p>${escapeHtml(str).replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')}</p>`; }
 
@@ -168,6 +194,7 @@ async function boot() {
   try {
     const user = await account.get();
     if (!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) throw new Error('Not admin');
+    currentUser = user;
     $('userBox').textContent = `Logged in as ${user.email}`;
     $('app').classList.remove('hidden');
     await refreshExisting();
@@ -179,12 +206,10 @@ async function boot() {
 
 async function refreshExisting() {
   existingStems = new Set();
-  let total = 0;
   try {
-    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [Query.limit(500)]);
-    total = res.total ?? res.documents.length;
-    res.documents.forEach(d => existingStems.add((d.stem || '').trim()));
-    $('countPill').textContent = `Current DB: ${total}`;
+    const docs = await listAllQuestionDocs();
+    docs.forEach(d => existingStems.add(normalizeStemForDedupe(d.stem || '')));
+    $('countPill').textContent = `Current DB: ${docs.length}`;
   } catch (e) {
     $('countPill').textContent = 'Current DB: could not load';
   }
@@ -270,7 +295,7 @@ window.validateOnly = function validateOnly() {
   try {
     const normalized = parseInput();
     const errors = normalized.flatMap(x => x.errors);
-    const dupes = normalized.filter(x => $('skipDupes').checked && existingStems.has(x.doc.stem.trim())).length;
+    const dupes = normalized.filter(x => $('skipDupes').checked && existingStems.has(normalizeStemForDedupe(x.doc.stem))).length;
     if (errors.length) {
       setStatus(`Validation failed. ${errors.length} issue(s):\n\n` + errors.join('\n'));
       showBox('errBox', 'Fix the issues before importing.');
@@ -299,12 +324,12 @@ window.importQuestions = async function importQuestions() {
     let saved = 0, skipped = 0, failed = 0;
     for (let i = 0; i < normalized.length; i++) {
       const item = normalized[i];
-      if ($('skipDupes').checked && existingStems.has(item.doc.stem.trim())) {
+      if ($('skipDupes').checked && existingStems.has(normalizeStemForDedupe(item.doc.stem))) {
         skipped++; log(`SKIP Q${i+1}: duplicate stem`); continue;
       }
       try {
-        await databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), item.doc);
-        existingStems.add(item.doc.stem.trim());
+        await databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), item.doc, [Permission.read(Role.any()), Permission.update(Role.user(currentUser.$id)), Permission.delete(Role.user(currentUser.$id))]);
+        existingStems.add(normalizeStemForDedupe(item.doc.stem));
         saved++; log(`OK Q${i+1}: saved`);
       } catch (e) {
         failed++; log(`FAIL Q${i+1}: ${e.message || e}`);
@@ -319,6 +344,90 @@ window.importQuestions = async function importQuestions() {
     showBox('errBox', e.message);
   } finally {
     importBtn.disabled = false;
+  }
+}
+
+
+window.analyzeDuplicates = async function analyzeDuplicates() {
+  hideBoxes();
+  setStatus('Loading database and analyzing duplicate stems…');
+  try {
+    const docs = await listAllQuestionDocs();
+    const bySystem = {};
+    const groups = new Map();
+    for (const doc of docs) {
+      bySystem[doc.system || 'Unknown'] = (bySystem[doc.system || 'Unknown'] || 0) + 1;
+      const key = normalizeStemForDedupe(doc.stem || '');
+      if (!key) continue;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(doc);
+    }
+    const duplicateGroups = [...groups.values()].filter(g => g.length > 1);
+    const duplicateRows = duplicateGroups.reduce((sum, g) => sum + g.length - 1, 0);
+    const systemLines = Object.entries(bySystem)
+      .sort((a,b) => b[1]-a[1])
+      .map(([system,count]) => `${system}: ${count}`)
+      .join('\n');
+    const sample = duplicateGroups.slice(0, 10).map((g, i) => {
+      const stem = (g[0].stem || '').replace(/\s+/g, ' ').slice(0, 110);
+      return `${i+1}. ${g.length} copies — ${stem}${stem.length >= 110 ? '…' : ''}`;
+    }).join('\n');
+    setStatus(
+      `Total rows in questions table: ${docs.length}\n\n` +
+      `Counts by system:\n${systemLines}\n\n` +
+      `Duplicate groups: ${duplicateGroups.length}\n` +
+      `Extra duplicate rows that can be deleted: ${duplicateRows}\n\n` +
+      (sample ? `Sample duplicate groups:\n${sample}` : 'No duplicates detected.')
+    );
+    showBox(duplicateRows ? 'errBox' : 'okBox', duplicateRows ? `Found ${duplicateRows} extra duplicate row(s).` : 'No duplicate rows detected.');
+  } catch (e) {
+    showBox('errBox', e.message || 'Could not analyze duplicates.');
+  }
+}
+
+window.deleteDuplicateQuestions = async function deleteDuplicateQuestions() {
+  hideBoxes();
+  const ok = confirm('This will delete duplicate question rows with the same stem and keep one copy of each. Continue?');
+  if (!ok) return;
+  setStatus('Loading database and finding duplicate rows…');
+  try {
+    const docs = await listAllQuestionDocs();
+    const groups = new Map();
+    for (const doc of docs) {
+      const key = normalizeStemForDedupe(doc.stem || '');
+      if (!key) continue;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(doc);
+    }
+    const toDelete = [];
+    for (const group of groups.values()) {
+      if (group.length <= 1) continue;
+      // Keep the first returned document and delete the rest.
+      toDelete.push(...group.slice(1));
+    }
+    if (!toDelete.length) {
+      setStatus('No duplicate rows detected. Nothing to delete.');
+      showBox('okBox', 'No duplicates detected.');
+      return;
+    }
+    setStatus(`Deleting ${toDelete.length} duplicate row(s)…`);
+    let deleted = 0, failed = 0;
+    for (const doc of toDelete) {
+      try {
+        await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, doc.$id);
+        deleted++;
+        log(`DELETED ${doc.$id}`);
+      } catch (e) {
+        failed++;
+        log(`FAILED ${doc.$id}: ${e.message || e}`);
+      }
+    }
+    await refreshExisting();
+    const summary = `Done. Deleted: ${deleted}. Failed: ${failed}.`;
+    log('\n' + summary);
+    showBox(failed ? 'errBox' : 'okBox', summary);
+  } catch (e) {
+    showBox('errBox', e.message || 'Could not delete duplicates.');
   }
 }
 
@@ -349,10 +458,23 @@ window.loadSample = function loadSample() {
   setStatus('Sample loaded. Click Validate only.'); hideBoxes();
 }
 
-window.clearInput = function clearInput() { $('jsonInput').value = ''; setStatus('Cleared.'); hideBoxes(); }
+window.loadJsonFile = async function loadJsonFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  hideBoxes();
+  try {
+    const text = await file.text();
+    $('jsonInput').value = text;
+    setStatus(`Loaded file: ${file.name}. Click Validate only.`);
+  } catch (e) {
+    setStatus('Could not read file.');
+    showBox('errBox', e.message || 'Unknown file error');
+  }
+}
+
+window.clearInput = function clearInput() { $('jsonInput').value = ''; $('jsonFile').value = ''; setStatus('Cleared.'); hideBoxes(); }
 
 boot();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f6c317fde9d99',t:'MTc4MzUxNzIwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
