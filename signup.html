@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medchanic.md — Sign up</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .step-selector { display: flex; gap: 8px; margin-top: 2px; }
+    .step-btn {
+      flex: 1; padding: 9px 6px; background: var(--paper); border: 1px solid var(--line);
+      border-radius: 4px; font-family: var(--sans); font-size: 13px; color: var(--ink-soft);
+      cursor: pointer; text-align: center; transition: all 0.12s; position: relative;
+    }
+    .step-btn:hover { border-color: var(--clinical-blue); }
+    .step-btn.selected { background: var(--clinical-blue); border-color: var(--clinical-blue); color: white; font-weight: 600; }
+    .step-btn.coming-soon { opacity: 0.5; cursor: not-allowed; }
+    .step-btn .cs-tag {
+      display: block; font-size: 9px; font-family: var(--mono);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; opacity: 0.8;
+    }
+  </style>
 </head>
 <body>
 <div class="auth-page">
@@ -43,10 +58,33 @@
       <div class="field-error" id="passwordConfirmError"></div>
     </div>
 
+    <div class="field">
+      <label>I am preparing for</label>
+      <div class="step-selector">
+        <button class="step-btn selected" id="step-1" onclick="selectStep('Step 1')">
+          Step 1
+        </button>
+        <button class="step-btn coming-soon" id="step-2" onclick="selectStep('Step 2')" disabled>
+          Step 2
+          <span class="cs-tag">Coming soon</span>
+        </button>
+        <button class="step-btn coming-soon" id="step-2ck" onclick="selectStep('Step 2 CK')" disabled>
+          Step 2 CK
+          <span class="cs-tag">Coming soon</span>
+        </button>
+      </div>
+      <div class="field-error" id="stepError"></div>
+    </div>
+
     <button class="btn-primary" id="signupBtn" onclick="handleSignup()">Create account</button>
 
     <div class="auth-foot">
       Already have an account? <a href="index.html">Log in</a>
+    </div>
+    <div class="auth-foot" style="margin-top:10px;">
+      By signing up you agree to our
+      <a href="privacy.html" target="_blank">Privacy Policy</a> and
+      <a href="terms.html" target="_blank">Terms of Use</a>.
     </div>
   </div>
 </div>
@@ -59,19 +97,23 @@
     .setProject("6a427cd000140ae72eb1");
   const account = new Account(client);
 
-  // Kill any stale session on signup page too
-  try { await account.deleteSession("current"); } catch (e) { /* fine */ }
+  try { await account.deleteSession("current"); } catch (e) {}
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  let selectedStep = 'Step 1';
+
+  window.selectStep = function(step) {
+    if (step !== 'Step 1') return; // others disabled
+    selectedStep = step;
+    document.querySelectorAll('.step-btn:not(.coming-soon)').forEach(b => b.classList.remove('selected'));
+    document.getElementById('step-1').classList.add('selected');
+  };
 
   window.checkStrength = function() {
     const pw = document.getElementById("password").value;
     const el = document.getElementById("pwStrength");
     if (!pw) { el.textContent = ""; return; }
-    if (pw.length < 8) {
-      el.textContent = "Too short — minimum 8 characters.";
-      el.style.color = "var(--incorrect)"; return;
-    }
+    if (pw.length < 8) { el.textContent = "Too short — minimum 8 characters."; el.style.color = "var(--incorrect)"; return; }
     const strong = pw.length >= 12 && /[0-9]/.test(pw) && /[A-Za-z]/.test(pw);
     el.textContent = strong ? "Strong password ✓" : "Okay — try adding numbers or more characters.";
     el.style.color = strong ? "var(--correct)" : "var(--ink-faint)";
@@ -94,8 +136,7 @@
     document.querySelectorAll(".field-error").forEach(e => e.classList.remove("show"));
     document.querySelectorAll(".field input").forEach(e => e.classList.remove("invalid"));
     const b = document.getElementById("banner");
-    b.className = "form-banner";
-    b.textContent = "";
+    b.className = "form-banner"; b.textContent = "";
   }
 
   window.handleSignup = async function() {
@@ -107,21 +148,26 @@
     const btn      = document.getElementById("signupBtn");
 
     let hasError = false;
-    if (!name)              { fieldError("name",            "nameError",            "Enter your name.");                       hasError = true; }
-    if (!EMAIL_RE.test(email)) { fieldError("email",        "emailError",           "Enter a valid email address.");           hasError = true; }
-    if (password.length < 8)   { fieldError("password",     "passwordError",        "Password must be at least 8 characters."); hasError = true; }
-    if (confirm !== password)  { fieldError("passwordConfirm","passwordConfirmError","Passwords don't match.");                hasError = true; }
+    if (!name)                 { fieldError("name",            "nameError",             "Enter your name.");                        hasError = true; }
+    if (!EMAIL_RE.test(email)) { fieldError("email",           "emailError",            "Enter a valid email address.");            hasError = true; }
+    if (password.length < 8)   { fieldError("password",        "passwordError",         "Password must be at least 8 characters."); hasError = true; }
+    if (confirm !== password)  { fieldError("passwordConfirm", "passwordConfirmError",  "Passwords don't match.");                  hasError = true; }
     if (hasError) return;
 
     btn.disabled = true;
     btn.textContent = "Creating account…";
 
     try {
-      // Step 1: create the account
       await account.create(ID.unique(), email, password, name);
-      // Step 2: immediately log in
       await account.createEmailPasswordSession(email, password);
-      // Step 3: go to dashboard
+      // Save step selection + free tier defaults to preferences
+      await account.updatePrefs({
+        step: selectedStep,
+        subscribed: 'false',
+        blocksUsed: '0',
+        tests: '[]',
+        used: '[]'
+      });
       window.location.href = "dashboard.html";
     } catch (err) {
       btn.disabled = false;
