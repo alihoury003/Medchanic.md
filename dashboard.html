@@ -809,7 +809,7 @@
       <button class="active" data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
-      <a href="mailto:medchanicmd@gmail.com" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
+      <a href="/cdn-cgi/l/email-protection#7c1119181f141d12151f11183c1b111d1510521f1311" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
   </div>
@@ -1230,7 +1230,7 @@
   </div>
 </div>
 
-<script type="module">
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
 import { Client, Account, Databases, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 /* ===================== QUESTION BANK ===================== */
@@ -1407,6 +1407,22 @@ const _client = new Client()
 const _account   = new Account(_client);
 const _databases = new Databases(_client);
 
+async function listAllQuestionDocs() {
+  const limit = 500;
+  let offset = 0;
+  let all = [];
+  while (true) {
+    const res = await _databases.listDocuments(
+      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(limit), Query.offset(offset)]
+    );
+    all = all.concat(res.documents || []);
+    const total = typeof res.total === 'number' ? res.total : all.length;
+    if (!res.documents || res.documents.length === 0 || all.length >= total || res.documents.length < limit) break;
+    offset += res.documents.length;
+  }
+  return all;
+}
+
 let currentUser = null;
 
 function updateUserPill() {
@@ -1444,15 +1460,13 @@ function unpackQuestion(doc) {
 // Load all questions from Appwrite database into the live bank
 async function loadDatabaseQuestions() {
   try {
-    const res = await _databases.listDocuments(
-      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(500)]
-    );
-    res.documents.forEach(doc => {
+    const docs = await listAllQuestionDocs();
+    docs.forEach(doc => {
       if (!questionBank.find(q => q.id === doc.$id)) {
         questionBank.push(unpackQuestion(doc));
       }
     });
-    console.log(`Loaded ${res.documents.length} questions from database. Bank total: ${questionBank.length}`);
+    console.log(`Loaded ${docs.length} questions from database. Bank total: ${questionBank.length}`);
   } catch (err) {
     console.error('Could not load questions from database:', err);
   }
@@ -2150,15 +2164,13 @@ async function renderAdminQList() {
   const wrap = document.getElementById('adminQList');
   wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">Loading…</div>';
   try {
-    const res = await _databases.listDocuments(
-      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(500)]
-    );
-    document.getElementById('adminQCount').textContent = res.documents.length;
-    if (res.documents.length === 0) {
+    const docs = await listAllQuestionDocs();
+    document.getElementById('adminQCount').textContent = docs.length;
+    if (docs.length === 0) {
       wrap.innerHTML = '<div style="color:#5B6270;font-family:var(--sans);font-size:13px;">No questions in database yet.</div>';
       return;
     }
-    wrap.innerHTML = res.documents.map(doc => `
+    wrap.innerHTML = docs.map(doc => `
       <div class="admin-qrow">
         <div class="admin-qrow-meta">
           <div class="admin-qrow-stem">${doc.stem.substring(0,120)}${doc.stem.length > 120 ? '…' : ''}</div>
@@ -2220,7 +2232,7 @@ document.addEventListener('keydown', e => {
     <div class="promo-msg" id="promoMsg"></div>
 
     <div class="paywall-foot" style="margin-top:16px;">
-      Questions? <a href="mailto:medchanicmd@gmail.com">Contact us</a> ·
+      Questions? <a href="/cdn-cgi/l/email-protection#c3aea6a7a0aba2adaaa0aea783a4aea2aaafeda0acae">Contact us</a> ·
       <a href="terms.html" target="_blank">Terms</a> ·
       <a href="privacy.html" target="_blank">Privacy</a>
     </div>
@@ -2309,5 +2321,6 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
-</body>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1805120cbdfe30b',t:'MTc4MzUyNjU4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
