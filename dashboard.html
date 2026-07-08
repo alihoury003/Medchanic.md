@@ -704,6 +704,137 @@
   }
   .paywall-foot a { color: var(--clinical-blue); text-decoration: none; }
 
+
+  /* ============ AI TUTOR PANEL ============ */
+  .ai-panel {
+    position: fixed;
+    right: 22px;
+    top: 86px;
+    bottom: 22px;
+    width: min(430px, calc(100vw - 32px));
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.32);
+    z-index: 260;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .ai-panel.show { display: flex; }
+  .ai-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(180deg, rgba(43,108,176,0.08), transparent);
+  }
+  .ai-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+  }
+  .ai-sub {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .ai-close {
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 18px;
+  }
+  .ai-close:hover { color: var(--incorrect); }
+  .ai-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .ai-empty, .ai-warning {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 13px;
+    margin-bottom: 12px;
+  }
+  .ai-warning { border-color: rgba(192,57,43,0.25); background: var(--incorrect-soft); color: var(--incorrect); }
+  .ai-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ai-action {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .ai-action:hover { border-color: var(--clinical-blue); color: var(--clinical-blue); }
+  .ai-action.primary { background: var(--clinical-blue); color: white; border-color: var(--clinical-blue); }
+  .ai-action.primary:hover { background: var(--clinical-blue-dark); color: white; }
+  .ai-msg {
+    border-radius: 8px;
+    padding: 12px 13px;
+    margin-bottom: 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+  .ai-msg.user { background: var(--clinical-blue-soft); color: var(--clinical-blue-dark); margin-left: 24px; }
+  .ai-msg.assistant { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+  .ai-msg.loading { color: var(--ink-faint); font-style: italic; }
+  .ai-input-wrap {
+    border-top: 1px solid var(--line);
+    padding: 12px;
+    background: var(--panel);
+  }
+  .ai-input-wrap textarea {
+    width: 100%;
+    min-height: 74px;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .ai-input-wrap textarea:focus { outline: none; border-color: var(--clinical-blue); }
+  .ai-input-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; }
+  .ai-note { font-family: var(--sans); font-size: 10.5px; color: var(--ink-faint); line-height: 1.35; }
+  .ai-send {
+    border: none;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 5px;
+    padding: 9px 14px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .ai-send:hover { background: var(--clinical-blue-dark); }
+  .icon-btn.ai-active { background: var(--clinical-blue); color: white; border-color: var(--clinical-blue); }
+  @media (max-width: 900px) {
+    .ai-panel { left: 12px; right: 12px; width: auto; top: 76px; bottom: 12px; }
+  }
+
   /* ============ ADMIN PANEL ============ */
   .admin-overlay {
     position: fixed; inset: 0;
@@ -811,7 +942,7 @@
       <button class="active" data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
-      <a href="mailto:medchanicmd@gmail.com" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
+      <a href="/cdn-cgi/l/email-protection#167b7372757e77787f757b7256717b777f7a3875797b" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
   </div>
@@ -974,6 +1105,7 @@
     </div>
     <div class="right-controls">
       <button class="icon-btn" id="labBtn" onclick="toggleLabs()">Lab Values</button>
+      <button class="icon-btn" id="aiBtn" onclick="toggleAI()">AI Tutor</button>
       <button class="icon-btn" id="flagBtn" onclick="toggleFlag()">⚑ Mark</button>
       <button class="icon-btn" id="modeBtn" onclick="toggleMode()">Tutor Mode: ON</button>
     </div>
@@ -1196,6 +1328,25 @@
     </div>
   </div>
 
+
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-header">
+      <div>
+        <div class="ai-title">AI TUTOR</div>
+        <div class="ai-sub">Tutor-mode companion for this question. Educational support only.</div>
+      </div>
+      <button class="ai-close" onclick="toggleAI(false)">✕</button>
+    </div>
+    <div class="ai-body" id="aiBody"></div>
+    <div class="ai-input-wrap">
+      <textarea id="aiQuestionInput" placeholder="Ask a follow-up about this question, e.g. ‘Why does this lab pattern point to primary hyperaldosteronism?’"></textarea>
+      <div class="ai-input-row">
+        <div class="ai-note">Works best after you answer in Tutor Mode. Do not use for emergencies or personal medical advice.</div>
+        <button class="ai-send" onclick="askAIQuestion()">Ask</button>
+      </div>
+    </div>
+  </div>
+
   <div class="hl-toolbar" id="hlToolbar">
     <div class="hl-swab yellow" onclick="applyHighlight('hl-yellow')" title="Highlight yellow"></div>
     <div class="hl-swab green" onclick="applyHighlight('hl-green')" title="Highlight green"></div>
@@ -1232,8 +1383,8 @@
   </div>
 </div>
 
-<script type="module">
-import { Client, Account, Databases, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
+import { Client, Account, Databases, ID, Query, Functions } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 /* ===================== QUESTION BANK ===================== */
 const SUBJECTS = ["Anatomy","Behavioral science","Biochemistry","Biostatistics","Embryology","Genetics","Histology","Immunology","Microbiology","Pathology","Pathophysiology","Pharmacology","Physiology"];
@@ -1408,6 +1559,7 @@ const _client = new Client()
 
 const _account   = new Account(_client);
 const _databases = new Databases(_client);
+const _functions = new Functions(_client);
 
 async function listAllQuestionDocs() {
   const limit = 500;
@@ -1426,6 +1578,15 @@ async function listAllQuestionDocs() {
 }
 
 let currentUser = null;
+
+// AI Tutor backend. After creating the Appwrite Function, paste its function ID here.
+// Until then, summaries use the built-in explanation and custom chat asks will show a setup message.
+const AI_FUNCTION_ID = '';
+const AI_FREE_ASK_LIMIT = 3; // can be enforced after backend is connected
+let aiOpen = false;
+let aiBusy = false;
+let aiMessagesByQuestion = {};
+
 
 function updateUserPill() {
   document.querySelectorAll('.user-pill').forEach(el => {
@@ -1864,6 +2025,7 @@ function renderBlockQuestion() {
     ${explanationHtml}
   `;
   renderNav();
+  if (aiOpen) renderAIPanel();
 }
 
 function goToItem(idx) { current = idx; renderBlockQuestion(); }
@@ -1912,6 +2074,186 @@ function renderNav() {
     if (!activeBlock.isNew && ans) cls += ans === q.correct ? ' correct-mark' : ' incorrect-mark';
     return `<div class="${cls}" onclick="goToItem(${i})">${i+1}</div>`;
   }).join('');
+}
+
+
+/* ===================== AI TUTOR ===================== */
+function getCurrentQuestionContext() {
+  if (!activeBlock) return null;
+  const qid = activeBlock.qIds[current];
+  const q = questionBank.find(qq => qq.id === qid);
+  if (!q) return null;
+  return {
+    qid,
+    q,
+    userAnswer: activeBlock.answers[qid] || null,
+    canTutor: tutorMode && (!!activeBlock.answers[qid] || !activeBlock.isNew)
+  };
+}
+
+function toggleAI(force) {
+  const panel = document.getElementById('aiPanel');
+  const btn = document.getElementById('aiBtn');
+  aiOpen = typeof force === 'boolean' ? force : !panel.classList.contains('show');
+  panel.classList.toggle('show', aiOpen);
+  btn.classList.toggle('ai-active', aiOpen);
+  if (aiOpen) renderAIPanel();
+}
+
+function aiMessagesForCurrent() {
+  const ctx = getCurrentQuestionContext();
+  if (!ctx) return [];
+  if (!aiMessagesByQuestion[ctx.qid]) aiMessagesByQuestion[ctx.qid] = [];
+  return aiMessagesByQuestion[ctx.qid];
+}
+
+function escapeAI(text='') {
+  return String(text).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+function renderAIPanel() {
+  const body = document.getElementById('aiBody');
+  const ctx = getCurrentQuestionContext();
+  if (!ctx) {
+    body.innerHTML = '<div class="ai-empty">Open a question block to use AI Tutor.</div>';
+    return;
+  }
+
+  const messages = aiMessagesForCurrent();
+  let html = '';
+
+  if (!tutorMode) {
+    html += '<div class="ai-warning">AI Tutor is available in Tutor Mode. Turn Tutor Mode ON to use it.</div>';
+  } else if (!ctx.canTutor) {
+    html += '<div class="ai-empty">Answer the question first. Then AI Tutor can summarize why the answer is correct, why the others are wrong, and the high-yield idea.</div>';
+  } else {
+    html += `<div class="ai-actions">
+      <button class="ai-action primary" onclick="generateAISummary()">Generate summary</button>
+      <button class="ai-action" onclick="askSuggestedAI('Explain the high-yield concept behind this question in simple Step 1 terms.')">High-yield overview</button>
+      <button class="ai-action" onclick="askSuggestedAI('What was the main trap in this question?')">What was the trap?</button>
+    </div>`;
+  }
+
+  if (!AI_FUNCTION_ID) {
+    html += '<div class="ai-empty">AI backend is not connected yet. Summary mode can still use the built-in explanation, but live follow-up chat requires an Appwrite Function with an AI API key.</div>';
+  }
+
+  html += messages.map(m => `<div class="ai-msg ${m.role}">${escapeAI(m.text)}</div>`).join('');
+  body.innerHTML = html || '<div class="ai-empty">No AI messages yet.</div>';
+  body.scrollTop = body.scrollHeight;
+}
+
+function localAISummary(ctx) {
+  const q = ctx.q;
+  const user = ctx.userAnswer ? `Your answer: ${ctx.userAnswer}. ` : '';
+  const correctChoice = q.choices.find(c => c.letter === q.correct);
+  const wrong = q.whyWrong.map(w => `${w.letter}. ${w.text}`).join('\n');
+  return `Summary for this item\n\n${user}Correct answer: ${q.correct}${correctChoice ? ` — ${correctChoice.text}` : ''}\n\nWhy it is correct:\n${stripHtml(q.rationale)}\n\nWhy the others are wrong:\n${wrong}\n\nHigh-yield takeaway:\n${q.objective || `${q.subject} · ${q.system}`}`;
+}
+
+function stripHtml(html='') {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+async function callAIFunction(payload) {
+  if (!AI_FUNCTION_ID) throw new Error('AI backend not connected yet.');
+  const exec = await _functions.createExecution(
+    AI_FUNCTION_ID,
+    JSON.stringify(payload),
+    false,
+    '/',
+    'POST',
+    { 'content-type': 'application/json' }
+  );
+  const raw = exec.responseBody || '';
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed.answer || parsed.summary || parsed.text || raw;
+  } catch (_) {
+    return raw;
+  }
+}
+
+function buildAIPayload(mode, prompt='') {
+  const ctx = getCurrentQuestionContext();
+  if (!ctx) throw new Error('No active question.');
+  const q = ctx.q;
+  return {
+    mode,
+    prompt,
+    userAnswer: ctx.userAnswer,
+    question: {
+      subject: q.subject,
+      system: q.system,
+      stem: q.stem,
+      question: q.question,
+      choices: q.choices,
+      correct: q.correct,
+      objective: q.objective,
+      rationale: stripHtml(q.rationale),
+      whyWrong: q.whyWrong
+    }
+  };
+}
+
+async function generateAISummary() {
+  const ctx = getCurrentQuestionContext();
+  if (!ctx || !ctx.canTutor) { renderAIPanel(); return; }
+  const messages = aiMessagesForCurrent();
+  messages.push({ role: 'assistant loading', text: 'Generating summary…' });
+  renderAIPanel();
+  aiBusy = true;
+  try {
+    let answer;
+    if (AI_FUNCTION_ID) {
+      answer = await callAIFunction(buildAIPayload('summary'));
+    } else {
+      answer = localAISummary(ctx);
+    }
+    messages.pop();
+    messages.push({ role: 'assistant', text: answer });
+  } catch (err) {
+    messages.pop();
+    messages.push({ role: 'assistant', text: 'AI Tutor error: ' + (err.message || 'Could not generate a response.') });
+  } finally {
+    aiBusy = false;
+    renderAIPanel();
+  }
+}
+
+async function askSuggestedAI(prompt) {
+  document.getElementById('aiQuestionInput').value = prompt;
+  await askAIQuestion();
+}
+
+async function askAIQuestion() {
+  const ctx = getCurrentQuestionContext();
+  if (!ctx || !ctx.canTutor || aiBusy) { renderAIPanel(); return; }
+  const input = document.getElementById('aiQuestionInput');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  const messages = aiMessagesForCurrent();
+  messages.push({ role: 'user', text: prompt });
+  input.value = '';
+  messages.push({ role: 'assistant loading', text: 'Thinking…' });
+  renderAIPanel();
+  aiBusy = true;
+
+  try {
+    if (!AI_FUNCTION_ID) throw new Error('Live chat requires the AI Appwrite Function. We can connect it after you create the function and add the function ID.');
+    const answer = await callAIFunction(buildAIPayload('chat', prompt));
+    messages.pop();
+    messages.push({ role: 'assistant', text: answer });
+  } catch (err) {
+    messages.pop();
+    messages.push({ role: 'assistant', text: 'AI Tutor error: ' + (err.message || 'Could not generate a response.') });
+  } finally {
+    aiBusy = false;
+    renderAIPanel();
+  }
 }
 
 /* ===================== HIGHLIGHTER ===================== */
@@ -2011,6 +2353,7 @@ Object.assign(window, {
   reviewTest, goToItem, finishBlock, exitBlockToDashboard,
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
   applyHighlight, renderTestsList,
+  toggleAI, generateAISummary, askAIQuestion, askSuggestedAI,
   closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion,
   showPaywall, hidePaywall, handleSubscribeClick, applyPromoCode, selectPlan
 });
@@ -2316,7 +2659,7 @@ document.addEventListener('keydown', e => {
     <div class="promo-msg" id="promoMsg"></div>
 
     <div class="paywall-foot" style="margin-top:16px;">
-      Questions? <a href="mailto:medchanicmd@gmail.com">Contact us</a> ·
+      Questions? <a href="/cdn-cgi/l/email-protection#09646c6d6a616867606a646d496e64686065276a6664">Contact us</a> ·
       <a href="terms.html" target="_blank">Terms</a> ·
       <a href="privacy.html" target="_blank">Privacy</a>
     </div>
@@ -2405,5 +2748,6 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
