@@ -246,6 +246,7 @@
     background: none;
     border: none;
   }
+  .ct-selectall:hover { text-decoration: underline; }
   .tag-grid {
     display: flex;
     flex-wrap: wrap;
@@ -917,7 +918,7 @@
     <div class="ct-section">
       <div class="ct-section-head">
         <span class="ct-label">Subject</span>
-        <button class="ct-selectall" onclick="toggleSelectAll('subject')">Select all</button>
+        <button class="ct-selectall" id="subjectSelectAllBtn" onclick="toggleSelectAll('subject')">Select all</button>
       </div>
       <div class="tag-grid" id="subjectTags"></div>
     </div>
@@ -925,7 +926,7 @@
     <div class="ct-section">
       <div class="ct-section-head">
         <span class="ct-label">System / Module</span>
-        <button class="ct-selectall" onclick="toggleSelectAll('system')">Select all</button>
+        <button class="ct-selectall" id="systemSelectAllBtn" onclick="toggleSelectAll('system')">Select all</button>
       </div>
       <div class="tag-grid" id="systemTags"></div>
     </div>
@@ -1235,7 +1236,7 @@
 import { Client, Account, Databases, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 /* ===================== QUESTION BANK ===================== */
-const SUBJECTS = ["Anatomy","Behavioral Science","Biochemistry","Biostatistics","Embryology","Genetics","Histology","Immunology","Microbiology","Pathology","Pathophysiology","Pharmacology","Physiology"];
+const SUBJECTS = ["Anatomy","Behavioral science","Biochemistry","Biostatistics","Embryology","Genetics","Histology","Immunology","Microbiology","Pathology","Pathophysiology","Pharmacology","Physiology"];
 const SYSTEMS = ["Allergy & Immunology","Dermatology","Cardiovascular System","Pulmonary & Critical Care","Gastrointestinal & Nutrition","Hematology & Oncology","Renal, Urinary Systems & Electrolytes","Nervous System","Rheumatology/Orthopedics & Sports","Infectious Diseases","Endocrine, Diabetes & Metabolism","Female Reproductive System & Breast","Male Reproductive System","Pregnancy, Childbirth & Puerperium","Biostatistics & Epidemiology","Ear, Nose & Throat (ENT)","Psychiatric/Behavioral & Substance Use Disorder","Poisoning & Environmental Exposure","Ophthalmology","Social Sciences (Ethics/Legal/Professional)","Miscellaneous (Multisystem)","Biochemistry (General Principles)","Genetics (General Principles)","Microbiology (General Principles)","Pathology (General Principles)","Pharmacology (General Principles)"];
 
 const questionBank = [
@@ -1600,30 +1601,47 @@ async function confirmReset() {
 
 /* ===================== CREATE TEST ===================== */
 function renderCreateScreen() {
-  selectedSubjects = new Set(SUBJECTS); // default: all selected
-  selectedSystems = new Set(SYSTEMS);
+  // Default: nothing selected. Blue means selected; grey/white means unselected.
+  selectedSubjects = new Set();
+  selectedSystems = new Set();
 
   const subjWrap = document.getElementById('subjectTags');
   subjWrap.innerHTML = SUBJECTS.map(s => {
     const count = questionBank.filter(q => q.subject === s).length;
-    return `<span class="tag selected" data-val="${s}" onclick="toggleTag('subject','${s}')">${s}${count ? ` <span class="count">${count}</span>` : ''}</span>`;
+    return `<span class="tag" data-val="${s}" onclick="toggleTag('subject','${s}')">${s}${count ? ` <span class="count">${count}</span>` : ''}</span>`;
   }).join('');
 
   const sysWrap = document.getElementById('systemTags');
   sysWrap.innerHTML = SYSTEMS.map(s => {
     const count = questionBank.filter(q => q.system === s).length;
-    return `<span class="tag selected" data-val="${s}" onclick="toggleTag('system','${s}')">${s}${count ? ` <span class="count">${count}</span>` : ''}</span>`;
+    return `<span class="tag" data-val="${s}" onclick="toggleTag('system','${s}')">${s}${count ? ` <span class="count">${count}</span>` : ''}</span>`;
   }).join('');
 
-  document.getElementById('qcountSlider').value = Math.min(3, questionBank.length || 1);
+  document.getElementById('qcountSlider').value = Math.min(40, Math.max(1, questionBank.length || 1));
+  updateTagVisuals('subject');
+  updateTagVisuals('system');
   updateQCount();
+}
+
+function updateSelectAllButtons() {
+  const subjBtn = document.getElementById('subjectSelectAllBtn');
+  const sysBtn  = document.getElementById('systemSelectAllBtn');
+  if (subjBtn) subjBtn.textContent = selectedSubjects.size === SUBJECTS.length ? 'Clear all' : 'Select all';
+  if (sysBtn)  sysBtn.textContent  = selectedSystems.size === SYSTEMS.length ? 'Clear all' : 'Select all';
+}
+
+function updateTagVisuals(type) {
+  const set = type === 'subject' ? selectedSubjects : selectedSystems;
+  const wrap = document.getElementById(type === 'subject' ? 'subjectTags' : 'systemTags');
+  if (!wrap) return;
+  wrap.querySelectorAll('.tag').forEach(t => t.classList.toggle('selected', set.has(t.dataset.val)));
+  updateSelectAllButtons();
 }
 
 function toggleTag(type, val) {
   const set = type === 'subject' ? selectedSubjects : selectedSystems;
   if (set.has(val)) set.delete(val); else set.add(val);
-  const wrap = document.getElementById(type === 'subject' ? 'subjectTags' : 'systemTags');
-  wrap.querySelectorAll('.tag').forEach(t => t.classList.toggle('selected', set.has(t.dataset.val)));
+  updateTagVisuals(type);
   updateQCount();
 }
 
@@ -1632,12 +1650,12 @@ function toggleSelectAll(type) {
   const set = type === 'subject' ? selectedSubjects : selectedSystems;
   const allSelected = set.size === all.length;
   if (allSelected) { set.clear(); } else { all.forEach(v => set.add(v)); }
-  const wrap = document.getElementById(type === 'subject' ? 'subjectTags' : 'systemTags');
-  wrap.querySelectorAll('.tag').forEach(t => t.classList.toggle('selected', set.has(t.dataset.val)));
+  updateTagVisuals(type);
   updateQCount();
 }
 
 function matchingQuestions() {
+  if (selectedSubjects.size === 0 || selectedSystems.size === 0) return [];
   return questionBank.filter(q => selectedSubjects.has(q.subject) && selectedSystems.has(q.system));
 }
 
@@ -1646,10 +1664,21 @@ function updateQCount() {
   const available = matchingQuestions().length;
   const val = parseInt(slider.value, 10);
   document.getElementById('qcountDisplay').textContent = val;
-  document.getElementById('qcountAvailable').textContent =
-    available > 0
-      ? `${available} question${available === 1 ? '' : 's'} match your filters.`
-      : `No questions match your current filters yet — try selecting more subjects or systems.`;
+
+  let message = '';
+  if (selectedSubjects.size === 0 && selectedSystems.size === 0) {
+    message = 'Select at least one subject and one system/module to see matching questions.';
+  } else if (selectedSubjects.size === 0) {
+    message = 'Select at least one subject.';
+  } else if (selectedSystems.size === 0) {
+    message = 'Select at least one system/module.';
+  } else if (available > 0) {
+    message = `${available} question${available === 1 ? '' : 's'} match your filters.`;
+  } else {
+    message = 'No questions match your current filters yet — try selecting more subjects or systems.';
+  }
+
+  document.getElementById('qcountAvailable').textContent = message;
   document.getElementById('generateBtn').disabled = available === 0;
 }
 
