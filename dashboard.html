@@ -639,6 +639,69 @@
     padding: 16px 0 4px;
   }
 
+  /* ============ PAYWALL MODAL ============ */
+  .paywall-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,12,16,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400; padding: 20px;
+  }
+  .paywall-overlay.show { display: flex; }
+  .paywall-card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; width: 100%; max-width: 580px;
+    padding: 40px 36px; box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  }
+  .paywall-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .paywall-brand .mark { font-size: 20px; color: var(--clinical-blue); }
+  .paywall-brand .name { font-family: var(--mono); font-weight: 700; font-size: 15px; }
+  .paywall-card h2 { font-family: var(--serif); font-size: 22px; margin: 14px 0 6px; }
+  .paywall-card .sub { font-family: var(--sans); font-size: 14px; color: var(--ink-soft); margin-bottom: 28px; line-height: 1.5; }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .plan {
+    border: 1px solid var(--line); border-radius: 6px; padding: 16px;
+    cursor: pointer; transition: border-color 0.12s;
+    position: relative;
+  }
+  .plan:hover { border-color: var(--clinical-blue); }
+  .plan.popular { border-color: var(--clinical-blue); }
+  .plan .popular-tag {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--clinical-blue); color: white; font-family: var(--mono);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  .plan-duration { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .plan-price { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--ink); }
+  .plan-price span { font-size: 13px; font-weight: 400; color: var(--ink-faint); }
+  .plan-note { font-family: var(--sans); font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; }
+  .paywall-cta {
+    width: 100%; padding: 13px; background: var(--clinical-blue); color: white;
+    border: none; border-radius: 4px; font-family: var(--sans); font-weight: 700;
+    font-size: 15px; cursor: pointer; margin-bottom: 16px;
+  }
+  .paywall-cta:hover { background: var(--clinical-blue-dark); }
+  .promo-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .promo-row input {
+    flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 4px;
+    font-family: var(--mono); font-size: 13px; background: var(--paper); color: var(--ink);
+  }
+  .promo-row input:focus { border-color: var(--clinical-blue); outline: none; }
+  .promo-apply {
+    padding: 9px 16px; background: var(--ink); color: var(--paper);
+    border: none; border-radius: 4px; font-family: var(--sans); font-weight: 600;
+    font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  .promo-apply:hover { background: var(--clinical-blue-dark); }
+  .promo-msg { font-family: var(--sans); font-size: 12.5px; margin-top: 4px; display: none; }
+  .promo-msg.show { display: block; }
+  .promo-msg.success { color: var(--correct); }
+  .promo-msg.error { color: var(--incorrect); }
+  .paywall-foot {
+    text-align: center; font-family: var(--sans); font-size: 12px; color: var(--ink-faint);
+  }
+  .paywall-foot a { color: var(--clinical-blue); text-decoration: none; }
+
   /* ============ ADMIN PANEL ============ */
   .admin-overlay {
     position: fixed; inset: 0;
@@ -746,6 +809,7 @@
       <button class="active" data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <a href="mailto:medchanicmd@gmail.com" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
   </div>
@@ -1401,6 +1465,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUser = await _account.get();
     updateUserPill();
     await loadUserData();
+    await loadSubscriptionState();
     await loadDatabaseQuestions();
     goScreen('dashboard');
   } catch (err) {
@@ -1557,6 +1622,12 @@ function updateQCount() {
 }
 
 function generateTest() {
+  // Paywall gate — check before starting a new block
+  if (!isSubscribed && blocksUsed >= FREE_BLOCK_LIMIT) {
+    showPaywall();
+    return;
+  }
+
   const pool = matchingQuestions();
   if (pool.length === 0) return;
   const n = Math.min(parseInt(document.getElementById('qcountSlider').value, 10), pool.length);
@@ -1755,6 +1826,12 @@ function finishBlock() {
   });
   saveUserTests();
 
+  // Increment free block usage counter
+  if (!isSubscribed) {
+    blocksUsed++;
+    saveSubscriptionState();
+  }
+
   document.getElementById('scoreSummary').style.display = 'block';
   document.getElementById('scoreBig').textContent = `${score}/${total}`;
 
@@ -1873,11 +1950,89 @@ Object.assign(window, {
   reviewTest, goToItem, finishBlock, exitBlockToDashboard,
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
   applyHighlight, renderTestsList,
-  closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion
+  closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion,
+  showPaywall, hidePaywall, handleSubscribeClick, applyPromoCode
 });
 
-/* ===================== ADMIN PANEL ===================== */
+/* ===================== PAYWALL & SUBSCRIPTION ===================== */
+const FREE_BLOCK_LIMIT = 2;
 const ADMIN_EMAIL = 'medchanicmd@gmail.com';
+
+// Valid promo codes — add new ones here as needed
+// Format: 'CODE': 'description'
+const PROMO_CODES = {
+  'MEDCHANIC2026': 'full',
+  'BETAACCESS':    'full',
+  'EARLYBIRD':     'full'
+};
+
+let isSubscribed = false;
+let blocksUsed = 0;
+
+async function loadSubscriptionState() {
+  try {
+    const prefs = await _account.getPrefs();
+    isSubscribed = prefs.subscribed === 'true';
+    blocksUsed = parseInt(prefs.blocksUsed || '0', 10);
+  } catch (err) {
+    isSubscribed = false;
+    blocksUsed = 0;
+  }
+  // Admin always has full access
+  if (currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    isSubscribed = true;
+  }
+}
+
+async function saveSubscriptionState() {
+  try {
+    const prefs = await _account.getPrefs();
+    prefs.subscribed = isSubscribed ? 'true' : 'false';
+    prefs.blocksUsed = String(blocksUsed);
+    await _account.updatePrefs(prefs);
+  } catch (err) {}
+}
+
+function showPaywall() {
+  document.getElementById('paywallOverlay').classList.add('show');
+}
+
+function hidePaywall() {
+  document.getElementById('paywallOverlay').classList.remove('show');
+  document.getElementById('promoInput').value = '';
+  const msg = document.getElementById('promoMsg');
+  msg.className = 'promo-msg'; msg.textContent = '';
+}
+
+function handleSubscribeClick() {
+  // Payment integration will go here once Stripe is connected.
+  // For now, direct them to contact for payment.
+  window.location.href = 'mailto:medchanicmd@gmail.com?subject=Medchanic.md%20Subscription&body=I%20would%20like%20to%20subscribe%20to%20Medchanic.md.%20Please%20send%20me%20payment%20instructions.';
+}
+
+async function applyPromoCode() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('promoMsg');
+
+  if (!code) {
+    msgEl.textContent = 'Enter a promo code first.';
+    msgEl.className = 'promo-msg show error';
+    return;
+  }
+
+  if (PROMO_CODES[code]) {
+    isSubscribed = true;
+    await saveSubscriptionState();
+    msgEl.textContent = '✓ Code accepted — full access unlocked!';
+    msgEl.className = 'promo-msg show success';
+    setTimeout(() => hidePaywall(), 1500);
+  } else {
+    msgEl.textContent = 'Invalid code. Try again or contact us.';
+    msgEl.className = 'promo-msg show error';
+  }
+}
+
+/* ===================== ADMIN PANEL ===================== */
 let adminCorrectAnswer = null;
 
 function openAdmin() {
@@ -2025,6 +2180,52 @@ document.addEventListener('keydown', e => {
   }
 });
 </script>
+
+<!-- ===================== PAYWALL ===================== -->
+<div class="paywall-overlay" id="paywallOverlay">
+  <div class="paywall-card">
+    <div class="paywall-brand"><span class="mark">⚙</span><span class="name">MEDCHANIC.MD</span></div>
+    <h2>Unlock unlimited access.</h2>
+    <p class="sub">You've used your 2 free blocks. Subscribe to continue studying — unlimited blocks, progress tracking, performance analytics, and everything coming next.</p>
+
+    <div class="plans">
+      <div class="plan">
+        <div class="plan-duration">Monthly</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-note">Billed monthly</div>
+      </div>
+      <div class="plan popular">
+        <div class="popular-tag">Most popular</div>
+        <div class="plan-duration">3 Months</div>
+        <div class="plan-price">$69<span>/3 mo</span></div>
+        <div class="plan-note">$23/month — save 21%</div>
+      </div>
+      <div class="plan">
+        <div class="plan-duration">Annual</div>
+        <div class="plan-price">$199<span>/yr</span></div>
+        <div class="plan-note">$16.6/month — best value</div>
+      </div>
+      <div class="plan">
+        <div class="plan-duration">Coming soon</div>
+        <div class="plan-price" style="font-size:15px;color:var(--ink-faint)">Group &amp; institutional rates</div>
+      </div>
+    </div>
+
+    <button class="paywall-cta" onclick="handleSubscribeClick()">Subscribe now</button>
+
+    <div class="promo-row">
+      <input type="text" id="promoInput" placeholder="Have a promo code?" autocomplete="off">
+      <button class="promo-apply" onclick="applyPromoCode()">Apply</button>
+    </div>
+    <div class="promo-msg" id="promoMsg"></div>
+
+    <div class="paywall-foot" style="margin-top:16px;">
+      Questions? <a href="mailto:medchanicmd@gmail.com">Contact us</a> ·
+      <a href="terms.html" target="_blank">Terms</a> ·
+      <a href="privacy.html" target="_blank">Privacy</a>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== ADMIN PANEL ===================== -->
 <div class="admin-overlay" id="adminOverlay">
