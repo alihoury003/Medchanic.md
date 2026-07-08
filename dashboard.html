@@ -665,6 +665,7 @@
   }
   .plan:hover { border-color: var(--clinical-blue); }
   .plan.popular { border-color: var(--clinical-blue); }
+  .plan.selected { border-color: var(--clinical-blue); box-shadow: 0 0 0 2px rgba(43,108,176,0.18); background: rgba(43,108,176,0.035); }
   .plan .popular-tag {
     position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
     background: var(--clinical-blue); color: white; font-family: var(--mono);
@@ -1497,6 +1498,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserData();
     await loadSubscriptionState();
     await loadDatabaseQuestions();
+    handlePaymentReturnNotice();
     goScreen('dashboard');
   } catch (err) {
     window.location.href = 'index.html';
@@ -1981,28 +1983,38 @@ Object.assign(window, {
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
   applyHighlight, renderTestsList,
   closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion,
-  showPaywall, hidePaywall, handleSubscribeClick, applyPromoCode
+  showPaywall, hidePaywall, handleSubscribeClick, applyPromoCode, selectPlan
 });
 
 /* ===================== PAYWALL & SUBSCRIPTION ===================== */
 const FREE_BLOCK_LIMIT = 2;
 const ADMIN_EMAIL = 'medchanicmd@gmail.com';
 
-// Valid promo codes — add new ones here as needed
-// Format: 'CODE': 'description'
-const PROMO_CODES = {
-  'MEDCHANIC2026': 'full',
-  'BETAACCESS':    'full',
-  'EARLYBIRD':     'full'
+// Stripe test-mode Payment Links. Replace these with live-mode links before public launch.
+const STRIPE_LINKS = {
+  monthly:   'https://buy.stripe.com/test_14AfZhaqN6REgbQ84rfEk00',
+  quarterly: 'https://buy.stripe.com/test_fZu9ATeH37VI0cSfwTfEk01',
+  annual:    'https://buy.stripe.com/test_3cI3cv56t2Bo6BggAXfEk02'
 };
 
+let selectedPlan = 'quarterly';
 let isSubscribed = false;
 let blocksUsed = 0;
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan[data-plan]').forEach(el => {
+    el.classList.toggle('selected', el.dataset.plan === plan);
+  });
+  const labels = { monthly: 'Subscribe monthly', quarterly: 'Subscribe for 3 months', annual: 'Subscribe yearly' };
+  const btn = document.getElementById('subscribeBtn');
+  if (btn) btn.textContent = labels[plan] || 'Subscribe now';
+}
 
 async function loadSubscriptionState() {
   try {
     const prefs = await _account.getPrefs();
-    isSubscribed = prefs.subscribed === 'true';
+    isSubscribed = prefs.subscribed === 'true' || prefs.subscriptionStatus === 'active';
     blocksUsed = parseInt(prefs.blocksUsed || '0', 10);
   } catch (err) {
     isSubscribed = false;
@@ -2025,22 +2037,45 @@ async function saveSubscriptionState() {
 
 function showPaywall() {
   document.getElementById('paywallOverlay').classList.add('show');
+  setTimeout(() => selectPlan(selectedPlan || 'quarterly'), 0);
 }
 
 function hidePaywall() {
   document.getElementById('paywallOverlay').classList.remove('show');
-  document.getElementById('promoInput').value = '';
   const msg = document.getElementById('promoMsg');
-  msg.className = 'promo-msg'; msg.textContent = '';
+  if (msg) { msg.className = 'promo-msg'; msg.textContent = ''; }
 }
 
-function handleSubscribeClick() {
-  // Payment integration will go here once Stripe is connected.
-  // For now, direct them to contact for payment.
-  window.location.href = 'mailto:medchanicmd@gmail.com?subject=Medchanic.md%20Subscription&body=I%20would%20like%20to%20subscribe%20to%20Medchanic.md.%20Please%20send%20me%20payment%20instructions.';
+function buildStripeUrl(plan) {
+  const base = STRIPE_LINKS[plan];
+  if (!base) throw new Error('Missing Stripe payment link for plan: ' + plan);
+  const url = new URL(base);
+
+  // Tie payment to the logged-in Appwrite user for webhook fulfillment.
+  if (currentUser && currentUser.$id) url.searchParams.set('client_reference_id', currentUser.$id);
+  if (currentUser && currentUser.email) url.searchParams.set('locked_prefilled_email', currentUser.email);
+
+  // Optional Stripe promotion code. This only works after you create Stripe promotion codes
+  // and enable "Allow promotion codes" on each Payment Link.
+  const promo = document.getElementById('promoInput')?.value.trim();
+  if (promo) url.searchParams.set('prefilled_promo_code', promo.toUpperCase());
+
+  url.searchParams.set('utm_source', 'medchanic_app');
+  url.searchParams.set('utm_medium', 'paywall');
+  url.searchParams.set('utm_campaign', plan);
+  return url.toString();
 }
 
-async function applyPromoCode() {
+function handleSubscribeClick(plan = selectedPlan) {
+  if (!currentUser) {
+    alert('Please log in before subscribing.');
+    window.location.href = 'index.html';
+    return;
+  }
+  window.location.href = buildStripeUrl(plan);
+}
+
+function applyPromoCode() {
   const code = document.getElementById('promoInput').value.trim().toUpperCase();
   const msgEl = document.getElementById('promoMsg');
 
@@ -2050,15 +2085,19 @@ async function applyPromoCode() {
     return;
   }
 
-  if (PROMO_CODES[code]) {
-    isSubscribed = true;
-    await saveSubscriptionState();
-    msgEl.textContent = '✓ Code accepted — full access unlocked!';
-    msgEl.className = 'promo-msg show success';
-    setTimeout(() => hidePaywall(), 1500);
-  } else {
-    msgEl.textContent = 'Invalid code. Try again or contact us.';
-    msgEl.className = 'promo-msg show error';
+  msgEl.textContent = '✓ Code added. Choose a plan and continue to Stripe.';
+  msgEl.className = 'promo-msg show success';
+}
+
+function handlePaymentReturnNotice() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    alert('Payment completed. If access does not unlock immediately, refresh once. Automatic activation requires the Stripe webhook to be connected.');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  if (params.get('payment') === 'cancelled') {
+    alert('Payment was cancelled. You can choose a plan again whenever you are ready.');
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
 
@@ -2217,18 +2256,18 @@ document.addEventListener('keydown', e => {
     <p class="sub">You've used your 2 free blocks. Subscribe to continue studying — unlimited blocks, progress tracking, performance analytics, and everything coming next.</p>
 
     <div class="plans">
-      <div class="plan">
+      <div class="plan" data-plan="monthly" onclick="selectPlan('monthly')">
         <div class="plan-duration">Monthly</div>
         <div class="plan-price">$29<span>/mo</span></div>
         <div class="plan-note">Billed monthly</div>
       </div>
-      <div class="plan popular">
+      <div class="plan popular selected" data-plan="quarterly" onclick="selectPlan('quarterly')">
         <div class="popular-tag">Most popular</div>
         <div class="plan-duration">3 Months</div>
         <div class="plan-price">$69<span>/3 mo</span></div>
         <div class="plan-note">$23/month — save 21%</div>
       </div>
-      <div class="plan">
+      <div class="plan" data-plan="annual" onclick="selectPlan('annual')">
         <div class="plan-duration">Annual</div>
         <div class="plan-price">$199<span>/yr</span></div>
         <div class="plan-note">$16.6/month — best value</div>
@@ -2239,7 +2278,7 @@ document.addEventListener('keydown', e => {
       </div>
     </div>
 
-    <button class="paywall-cta" onclick="handleSubscribeClick()">Subscribe now</button>
+    <button class="paywall-cta" id="subscribeBtn" onclick="handleSubscribeClick()">Subscribe for 3 months</button>
 
     <div class="promo-row">
       <input type="text" id="promoInput" placeholder="Have a promo code?" autocomplete="off">
