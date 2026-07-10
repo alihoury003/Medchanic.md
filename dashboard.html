@@ -1680,14 +1680,15 @@ function splitStemLeadIn(rawStem='') {
   if (!text) return { stem: '', question: '' };
 
   // Preferred format: vignette paragraphs, blank line, lead-in question.
+  // Accept ANY final paragraph ending in a question mark as the lead-in. This prevents repeated stems
+  // when lead-ins start with words like "Deficiency", "Mutation", or "Inhibition" instead of "Which".
   const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  const questionStart = /^(which|what|where|when|why|how|the presence|the absence|this patient|this finding|these findings)\b/i;
-  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1]) && questionStart.test(paras[paras.length - 1])) {
+  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1])) {
     return { stem: paras.slice(0, -1).join('\n\n'), question: paras[paras.length - 1] };
   }
 
   // Fallback for single-paragraph stems: split at the final question sentence.
-  const matches = [...text.matchAll(/(?:^|\s)((?:Which|What|Where|When|Why|How)\b[^?]+\?)/g)];
+  const matches = [...text.matchAll(/(?:^|\s)([^.!?]*\?)/g)];
   if (matches.length) {
     const m = matches[matches.length - 1];
     const q = m[1].trim();
@@ -1697,27 +1698,6 @@ function splitStemLeadIn(rawStem='') {
   }
 
   return { stem: text, question: '' };
-}
-
-// Convert a flat database row back into a full question object
-function unpackQuestion(doc) {
-  let content = {};
-  try { content = JSON.parse(doc.content); } catch (e) {}
-  const split = splitStemLeadIn(doc.stem || '');
-  return {
-    id: doc.$id,
-    subject: doc.subject,
-    system: doc.system,
-    rawStem: doc.stem,
-    stem: split.stem,
-    question: split.question,
-    correct: doc.correct,
-    objective: doc.objective,
-    choices:  content.choices  || [],
-    rationale: content.rationale || '',
-    whyWrong:  content.whyWrong  || [],
-    used: false
-  };
 }
 
 function normalizeStemForDedupe(stem='') {
