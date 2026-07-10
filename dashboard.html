@@ -1768,21 +1768,26 @@ const _databases = new Databases(_client);
 const _functions = new Functions(_client);
 
 async function listAllQuestionDocs() {
-  const limit = 500;
+  // Robust public REST loader. This avoids SDK/session edge cases and loads the full public QBank.
+  const limit = 1000;
   let offset = 0;
   let all = [];
   while (true) {
-    const res = await _databases.listDocuments(
-      APPWRITE_DB_ID, APPWRITE_COL_ID, [Query.limit(limit), Query.offset(offset)]
-    );
-    all = all.concat(res.documents || []);
+    const params = new URLSearchParams();
+    params.append('queries[]', JSON.stringify({ method: 'limit', values: [limit] }));
+    params.append('queries[]', JSON.stringify({ method: 'offset', values: [offset] }));
+    const url = `https://nyc.cloud.appwrite.io/v1/databases/${APPWRITE_DB_ID}/collections/${APPWRITE_COL_ID}/documents?${params.toString()}`;
+    const response = await fetch(url, { headers: { 'X-Appwrite-Project': '6a427cd000140ae72eb1' } });
+    if (!response.ok) throw new Error(`QBank fetch failed: ${response.status}`);
+    const res = await response.json();
+    const docs = res.documents || [];
+    all = all.concat(docs);
     const total = typeof res.total === 'number' ? res.total : all.length;
-    if (!res.documents || res.documents.length === 0 || all.length >= total || res.documents.length < limit) break;
-    offset += res.documents.length;
+    if (docs.length === 0 || all.length >= total || docs.length < limit) break;
+    offset += docs.length;
   }
   return all;
 }
-
 let currentUser = null;
 
 // AI Tutor backend. After creating the Appwrite Function, paste its function ID here.
@@ -1878,11 +1883,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     goScreen('dashboard');
     const loader = document.getElementById('bootLoader');
     if (loader) loader.style.display = 'none';
+    const totalEl = document.getElementById('totalCount');
+    if (totalEl) totalEl.textContent = 'loading…';
 
     loadDatabaseQuestions().then(() => {
       renderDashboard();
       if (document.getElementById('screen-create').classList.contains('active')) renderCreateScreen();
-    }).catch(err => console.error('Could not load questions:', err));
+    }).catch(err => {
+      console.error('Could not load questions:', err);
+      const totalEl = document.getElementById('totalCount');
+      if (totalEl) totalEl.textContent = 'reload';
+    });
   } catch (err) {
     const loader = document.getElementById('bootLoader');
     if (loader) loader.querySelector('.boot-sub').textContent = 'Redirecting to login…';
@@ -3391,5 +3402,6 @@ document.addEventListener('keydown', e => {
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19340849ae3e309',t:'MTc4MzcyNTEzMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
