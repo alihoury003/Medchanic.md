@@ -425,6 +425,45 @@
   .time-pill.over { color: var(--incorrect); border-color: var(--incorrect); background: var(--incorrect-soft); }
   .timer.time-up { background: var(--incorrect); color: white; }
 
+  .post-score-card {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+  .post-score-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
+  .post-score-title { font-family: var(--serif); font-size: 26px; font-weight: 700; }
+  .post-score-pct { font-family: var(--mono); font-size: 38px; font-weight: 700; color: var(--clinical-blue); }
+  .score-line { height: 18px; border-radius: 999px; overflow: hidden; display: flex; background: var(--omitted-soft); border: 1px solid var(--line); }
+  .score-seg.correct { background: var(--correct); }
+  .score-seg.incorrect { background: var(--incorrect); }
+  .score-seg.omitted { background: #C9C6BC; }
+  .score-legend-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-family: var(--sans); font-size: 13px; color: var(--ink-soft); }
+  .score-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+  .question-review-list { display: flex; flex-direction: column; gap: 9px; margin-top: 12px; }
+  .question-review-row {
+    display: grid; grid-template-columns: 52px 1fr auto auto; gap: 12px; align-items: center;
+    border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 12px 14px; cursor: pointer;
+  }
+  .question-review-row:hover { border-color: var(--clinical-blue); background: var(--clinical-blue-soft); }
+  .question-review-row.correct { border-left: 5px solid var(--correct); }
+  .question-review-row.incorrect { border-left: 5px solid var(--incorrect); }
+  .qr-num { font-family: var(--mono); font-weight: 700; color: var(--ink); }
+  .qr-main { min-width: 0; }
+  .qr-status { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+  .qr-status.correct { color: var(--correct); }
+  .qr-status.incorrect { color: var(--incorrect); }
+  .qr-stem { font-family: var(--sans); font-size: 13px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .qr-time { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+  .qr-time.over { color: var(--flag); font-weight: 700; }
+  .qr-review { font-family: var(--sans); color: var(--clinical-blue); font-weight: 700; font-size: 13px; white-space: nowrap; }
+  .summary-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  @media (max-width: 800px) {
+    .question-review-row { grid-template-columns: 42px 1fr; }
+    .qr-time, .qr-review { grid-column: 2; }
+  }
+
   /* highlighter marks */
   mark.hl-yellow { background: #F6E27A; color: inherit; border-radius: 2px; padding: 0 1px; }
   mark.hl-green { background: #BFE3C7; color: inherit; border-radius: 2px; padding: 0 1px; }
@@ -1946,13 +1985,13 @@ function reviewTest(idx) {
     isNew: false,
     status: 'completed'
   };
-  current = 0;
+  current = -1;
   submitted = true;
   tutorMode = true;
   document.getElementById('modeBtn').textContent = `Tutor Mode: ON`;
   document.getElementById('navBlockTitle').textContent = `Review · ${t.title}`;
   goScreen('block');
-  renderBlockQuestion();
+  renderBlockSummary();
 }
 
 function resumeTest(idx) {
@@ -2109,7 +2148,87 @@ function exitBlockToDashboard() {
   goScreen('dashboard');
 }
 
+
+function renderBlockSummary() {
+  if (!activeBlock) return;
+  clearInterval(timerInterval);
+  current = -1;
+  if (aiOpen) toggleAI(false);
+  document.getElementById('itemCounter').textContent = 'Block Summary';
+  document.getElementById('timer').textContent = '--:--';
+  document.getElementById('timer').classList.remove('time-up');
+  document.getElementById('flagBtn').classList.remove('active');
+  document.getElementById('navBlockTitle').textContent = `Summary · ${activeBlock.title}`;
+
+  const esc = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const total = activeBlock.qIds.length;
+  let correct = 0, incorrect = 0, omitted = 0;
+  const expected = activeBlock.expectedSecondsPerQuestion || SECONDS_PER_QUESTION;
+
+  const rows = activeBlock.qIds.map((qid, i) => {
+    const q = questionBank.find(qq => qq.id === qid);
+    const ans = activeBlock.answers[qid];
+    const isCorrect = ans && ans === q.correct;
+    if (isCorrect) correct++;
+    else if (ans) incorrect++;
+    else omitted++;
+    const spent = activeBlock.timeSpent && activeBlock.timeSpent[qid] ? activeBlock.timeSpent[qid] : 0;
+    const over = spent > expected;
+    const stem = (q.stem || q.question || '').replace(/\s+/g, ' ').slice(0, 150);
+    return `<div class="question-review-row ${isCorrect ? 'correct' : 'incorrect'}" onclick="goToItem(${i})">
+      <div class="qr-num">Q${i+1}</div>
+      <div class="qr-main">
+        <div class="qr-status ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Correct' : (ans ? 'Incorrect' : 'Omitted')} · Your ${ans || '—'} · Correct ${q.correct}</div>
+        <div class="qr-stem">${esc(stem)}${stem.length >= 150 ? '…' : ''}</div>
+      </div>
+      <div class="qr-time ${over ? 'over' : ''}">Time ${formatTime(spent)} / ${formatTime(expected)}</div>
+      <div class="qr-review">Review →</div>
+    </div>`;
+  }).join('');
+
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  const correctW = total ? (correct / total) * 100 : 0;
+  const incorrectW = total ? (incorrect / total) * 100 : 0;
+  const omittedW = total ? (omitted / total) * 100 : 0;
+  const totalTimeUsed = activeBlock.totalTimeUsed || Math.max(0, (activeBlock.totalSeconds || total * expected) - (activeBlock.remainingSeconds || 0));
+  const targetTotal = activeBlock.totalSeconds || total * expected;
+
+  document.getElementById('questionArea').innerHTML = `
+    <div class="post-score-card">
+      <div class="post-score-top">
+        <div>
+          <div class="post-score-title">Block complete</div>
+          <div style="font-family:var(--sans);color:var(--ink-soft);font-size:14px;margin-top:4px;">${correct}/${total} correct · ${incorrect} wrong · ${omitted} omitted</div>
+        </div>
+        <div class="post-score-pct">${pct}%</div>
+      </div>
+      <div class="score-line" aria-label="Score line">
+        <div class="score-seg correct" style="width:${correctW}%"></div>
+        <div class="score-seg incorrect" style="width:${incorrectW}%"></div>
+        <div class="score-seg omitted" style="width:${omittedW}%"></div>
+      </div>
+      <div class="score-legend-row">
+        <span><span class="score-legend-dot" style="background:var(--correct)"></span>${correct} correct</span>
+        <span><span class="score-legend-dot" style="background:var(--incorrect)"></span>${incorrect} wrong</span>
+        <span><span class="score-legend-dot" style="background:#C9C6BC"></span>${omitted} omitted</span>
+        <span>Time used: <strong>${formatTime(totalTimeUsed)}</strong> / target <strong>${formatTime(targetTotal)}</strong></span>
+      </div>
+    </div>
+
+    <div class="post-score-title" style="font-size:20px;margin-bottom:4px;">Question review</div>
+    <div style="font-family:var(--sans);font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Green = correct. Red = wrong/omitted. Orange time means slower than target.</div>
+    <div class="question-review-list">${rows}</div>
+    <div class="summary-actions">
+      <button class="btn btn-primary" onclick="goScreen('dashboard')">Back to dashboard</button>
+      <button class="btn btn-ghost" onclick="goScreen('tests')">Previous tests</button>
+      <button class="btn btn-ghost" onclick="goToItem(0)">Review from Q1</button>
+    </div>
+  `;
+  renderNav();
+}
+
 function renderBlockQuestion() {
+  if (current < 0) { renderBlockSummary(); return; }
   const qid = activeBlock.qIds[current];
   const q = questionBank.find(qq => qq.id === qid);
   const userAnswer = activeBlock.answers[qid];
@@ -2177,7 +2296,7 @@ function renderBlockQuestion() {
       ${activeBlock.isNew ? `<button class="btn btn-ghost" onclick="suspendBlock()">Suspend block</button>` : ''}
       ${current < activeBlock.qIds.length - 1
         ? `<button class="btn btn-primary" onclick="goToItem(${current+1})">Next →</button>`
-        : (activeBlock.isNew ? `<button class="btn btn-primary" onclick="finishBlock()">End Block</button>` : `<button class="btn btn-dark" onclick="goScreen('tests')">Back to Previous Tests</button>`)}
+        : (activeBlock.isNew ? `<button class="btn btn-primary" onclick="finishBlock()">End Block</button>` : `<button class="btn btn-dark" onclick="renderBlockSummary()">Back to Summary</button>`)}
     </div>
     ${explanationHtml}
   `;
@@ -2237,7 +2356,8 @@ function finishBlock(reason = 'manual') {
   document.getElementById('scoreBig').textContent = `${score}/${total}`;
 
   activeBlock = { ...activeBlock, ...completed, isNew: false, status: 'completed' };
-  renderBlockQuestion();
+  current = -1;
+  renderBlockSummary();
 }
 
 function renderNav() {
@@ -2246,10 +2366,10 @@ function renderNav() {
     const q = questionBank.find(qq => qq.id === qid);
     const ans = activeBlock.answers[qid];
     let cls = 'nav-item';
-    if (i === current) cls += ' current';
+    if (i === current && current >= 0) cls += ' current';
     if (ans) cls += ' answered';
     if (activeBlock.flagged[i]) cls += ' flagged';
-    if (!activeBlock.isNew && ans) cls += ans === q.correct ? ' correct-mark' : ' incorrect-mark';
+    if (!activeBlock.isNew) cls += ans === q.correct ? ' correct-mark' : ' incorrect-mark';
     return `<div class="${cls}" onclick="goToItem(${i})">${i+1}</div>`;
   }).join('');
 }
@@ -2528,7 +2648,7 @@ function saveZoneHighlights() {
 Object.assign(window, {
   goScreen, doLogout, openResetModal, closeResetModal, confirmReset,
   renderCreateScreen, toggleTag, toggleSelectAll, updateQCount, generateTest,
-  openTest, reviewTest, resumeTest, goToItem, finishBlock, suspendBlock, exitBlockToDashboard,
+  openTest, reviewTest, resumeTest, goToItem, finishBlock, renderBlockSummary, suspendBlock, exitBlockToDashboard,
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
   applyHighlight, renderTestsList,
   toggleAI, generateAISummary, askAIQuestion, askSuggestedAI,
@@ -2927,6 +3047,5 @@ document.addEventListener('keydown', e => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
