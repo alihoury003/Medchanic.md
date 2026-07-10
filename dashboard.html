@@ -385,32 +385,45 @@
   .choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
   .choice {
     display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
-    border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer;
+    border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: default;
     font-size: 15px; line-height: 1.5; transition: border-color 0.12s, background 0.12s;
   }
   .choice:hover { border-color: var(--clinical-blue); background: var(--clinical-blue-soft); }
   .choice.selected { border-color: var(--clinical-blue); background: var(--clinical-blue-soft); }
-  .choice .letter { font-family: var(--mono); font-weight: 600; color: var(--ink-soft); min-width: 18px; }
+  .choice .select-circle {
+    width: 18px; height: 18px; min-width: 18px; margin-top: 3px;
+    border-radius: 50%; border: 2px solid var(--ink-faint); background: var(--panel);
+    cursor: pointer; position: relative; transition: border-color .12s, background .12s, box-shadow .12s;
+  }
+  .choice .select-circle:hover { border-color: var(--clinical-blue); box-shadow: 0 0 0 3px rgba(43,108,176,0.12); }
+  .choice.selected .select-circle { border-color: var(--clinical-blue); background: var(--clinical-blue); }
+  .choice.selected .select-circle::after {
+    content: ''; position: absolute; inset: 4px; border-radius: 50%; background: white;
+  }
+  .choice.correct-answer .select-circle { border-color: var(--correct); background: var(--correct); }
+  .choice.wrong-selected .select-circle { border-color: var(--incorrect); background: var(--incorrect); }
+  .choice .letter { font-family: var(--mono); font-weight: 600; color: var(--ink-soft); min-width: 22px; }
   .choice.selected .letter { color: var(--clinical-blue); }
   .choice.correct-answer { border-color: var(--correct); background: var(--correct-soft); }
   .choice.correct-answer .letter { color: var(--correct); }
   .choice.wrong-selected { border-color: var(--incorrect); background: var(--incorrect-soft); }
   .choice.wrong-selected .letter { color: var(--incorrect); }
   .choice.disabled { cursor: default; }
-  .choice .mark { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .choice .mark { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 600; white-space: nowrap; }
   .choice.correct-answer .mark { color: var(--correct); }
   .choice.wrong-selected .mark { color: var(--incorrect); }
-  .actions { display: flex; gap: 10px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-  /* letter button vs text click target */
-  .choice .letter {
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 3px;
-  }
-  .choice .letter:hover { background: rgba(43,108,176,0.12); }
+  /* choice text remains the strikethrough target */
   .choice .ctext { cursor: pointer; flex: 1; }
   .choice .ctext.struck { text-decoration: line-through; color: var(--ink-faint); }
+  .time-row {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    margin: 10px 0 18px; font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+  }
+  .time-pill { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; }
+  .time-pill.over { color: var(--incorrect); border-color: var(--incorrect); background: var(--incorrect-soft); }
+  .timer.time-up { background: var(--incorrect); color: white; }
 
   /* highlighter marks */
   mark.hl-yellow { background: #F6E27A; color: inherit; border-radius: 2px; padding: 0 1px; }
@@ -1535,7 +1548,8 @@ let activeBlock = null;
 let current = 0;
 let submitted = false;
 let tutorMode = true;
-let seconds = 150;
+const SECONDS_PER_QUESTION = 90;
+let seconds = 0;
 let timerInterval = null;
 
 /* ===================== NAVIGATION ===================== */
@@ -1856,19 +1870,27 @@ function generateTest() {
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const chosen = shuffled.slice(0, n);
 
+  const totalSeconds = n * SECONDS_PER_QUESTION;
   activeBlock = {
     qIds: chosen.map(q => q.id),
     answers: {},
     flagged: {},
     struck: {},
     highlights: {},
+    timeSpent: {},
+    expectedSecondsPerQuestion: SECONDS_PER_QUESTION,
+    totalSeconds,
+    remainingSeconds: totalSeconds,
+    itemStartedAt: Date.now(),
     title: `${selectedSubjects.size === SUBJECTS.length ? 'All Subjects' : [...selectedSubjects].slice(0,2).join(', ') + (selectedSubjects.size > 2 ? '…' : '')}`,
-    isNew: true
+    isNew: true,
+    status: 'active'
   };
   current = 0;
   submitted = false;
   document.getElementById('navBlockTitle').textContent = `Block · ${activeBlock.title}`;
   goScreen('block');
+  startBlockTimer();
   renderBlockQuestion();
 }
 
@@ -1881,44 +1903,125 @@ function renderTestsList() {
   }
   wrap.innerHTML = pastTests.slice().reverse().map((t, revIdx) => {
     const idx = pastTests.length - 1 - revIdx;
-    const pct = Math.round((t.score / t.total) * 100);
-    let pillColor = 'var(--correct)', pillBg = 'var(--correct-soft)';
-    if (pct < 60) { pillColor = 'var(--incorrect)'; pillBg = 'var(--incorrect-soft)'; }
+    const isSuspended = t.status === 'suspended';
+    const pct = isSuspended ? null : Math.round((t.score / t.total) * 100);
+    let pillColor = 'var(--correct)', pillBg = 'var(--correct-soft)', pillText = `${pct}%`;
+    if (isSuspended) { pillColor = 'var(--clinical-blue)'; pillBg = 'var(--clinical-blue-soft)'; pillText = 'Paused'; }
+    else if (pct < 60) { pillColor = 'var(--incorrect)'; pillBg = 'var(--incorrect-soft)'; }
     else if (pct < 80) { pillColor = 'var(--flag)'; pillBg = '#FBF1E2'; }
-    return `<div class="test-row" onclick="reviewTest(${idx})">
-      <div class="test-score-pill" style="color:${pillColor};background:${pillBg}">${pct}%</div>
+    const sub = isSuspended
+      ? `${Object.keys(t.answers || {}).length}/${t.total} answered · ${formatTime(t.remainingSeconds || 0)} left`
+      : `${t.score} correct · ${t.total - t.score} incorrect · ${formatTime(t.totalTimeUsed || 0)} used`;
+    return `<div class="test-row" onclick="openTest(${idx})">
+      <div class="test-score-pill" style="color:${pillColor};background:${pillBg}">${pillText}</div>
       <div>
         <div class="test-meta-title">${t.title} · ${t.total} questions</div>
-        <div class="test-meta-sub">${t.score} correct · ${t.total - t.score} incorrect</div>
+        <div class="test-meta-sub">${sub}</div>
       </div>
       <div class="test-date">${t.date}</div>
-      <div style="text-align:right; color:var(--clinical-blue); font-size:13px;">Review →</div>
+      <div style="text-align:right; color:var(--clinical-blue); font-size:13px;">${isSuspended ? 'Resume →' : 'Review →'}</div>
     </div>`;
   }).join('');
 }
 
+function openTest(idx) {
+  const t = pastTests[idx];
+  if (t.status === 'suspended') resumeTest(idx);
+  else reviewTest(idx);
+}
+
 function reviewTest(idx) {
   const t = pastTests[idx];
-  activeBlock = { qIds: t.qIds, answers: { ...t.answers }, flagged: {}, struck: {}, highlights: {}, title: t.title, isNew: false };
+  activeBlock = {
+    qIds: t.qIds,
+    answers: { ...(t.answers || {}) },
+    flagged: { ...(t.flagged || {}) },
+    struck: { ...(t.struck || {}) },
+    highlights: { ...(t.highlights || {}) },
+    timeSpent: { ...(t.timeSpent || {}) },
+    expectedSecondsPerQuestion: t.expectedSecondsPerQuestion || SECONDS_PER_QUESTION,
+    totalSeconds: t.totalSeconds || ((t.qIds || []).length * SECONDS_PER_QUESTION),
+    remainingSeconds: 0,
+    title: t.title,
+    isNew: false,
+    status: 'completed'
+  };
   current = 0;
   submitted = true;
   tutorMode = true;
+  document.getElementById('modeBtn').textContent = `Tutor Mode: ON`;
   document.getElementById('navBlockTitle').textContent = `Review · ${t.title}`;
   goScreen('block');
   renderBlockQuestion();
 }
 
+function resumeTest(idx) {
+  const t = pastTests[idx];
+  activeBlock = {
+    qIds: t.qIds,
+    answers: { ...(t.answers || {}) },
+    flagged: { ...(t.flagged || {}) },
+    struck: { ...(t.struck || {}) },
+    highlights: { ...(t.highlights || {}) },
+    timeSpent: { ...(t.timeSpent || {}) },
+    expectedSecondsPerQuestion: t.expectedSecondsPerQuestion || SECONDS_PER_QUESTION,
+    totalSeconds: t.totalSeconds || ((t.qIds || []).length * SECONDS_PER_QUESTION),
+    remainingSeconds: typeof t.remainingSeconds === 'number' ? t.remainingSeconds : ((t.qIds || []).length * SECONDS_PER_QUESTION),
+    itemStartedAt: Date.now(),
+    title: t.title,
+    isNew: true,
+    status: 'active',
+    resumeTestId: t.id
+  };
+  current = Math.min(t.current || 0, activeBlock.qIds.length - 1);
+  submitted = false;
+  tutorMode = t.tutorMode !== false;
+  document.getElementById('modeBtn').textContent = `Tutor Mode: ${tutorMode ? 'ON' : 'OFF'}`;
+  document.getElementById('navBlockTitle').textContent = `Block · ${t.title}`;
+  goScreen('block');
+  startBlockTimer();
+  renderBlockQuestion();
+}
+
 /* ===================== BLOCK RUNNER ===================== */
-function startTimer() {
+function formatTime(totalSeconds) {
+  totalSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const sec = totalSeconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer');
+  if (!el || !activeBlock) return;
+  el.textContent = formatTime(activeBlock.remainingSeconds || 0);
+  el.classList.toggle('time-up', !!activeBlock.isNew && (activeBlock.remainingSeconds || 0) <= 0);
+}
+
+function startBlockTimer() {
   clearInterval(timerInterval);
-  seconds = 150;
+  if (!activeBlock || !activeBlock.isNew) { updateTimerDisplay(); return; }
+  if (typeof activeBlock.remainingSeconds !== 'number') activeBlock.remainingSeconds = activeBlock.qIds.length * SECONDS_PER_QUESTION;
+  updateTimerDisplay();
   timerInterval = setInterval(() => {
-    seconds--;
-    if (seconds <= 0) { seconds = 0; clearInterval(timerInterval); }
-    const m = String(Math.floor(seconds/60)).padStart(2,'0');
-    const s = String(seconds%60).padStart(2,'0');
-    document.getElementById('timer').textContent = `${m}:${s}`;
+    if (!activeBlock || !activeBlock.isNew) { clearInterval(timerInterval); return; }
+    activeBlock.remainingSeconds = Math.max(0, (activeBlock.remainingSeconds || 0) - 1);
+    updateTimerDisplay();
+    if (activeBlock.remainingSeconds <= 0) {
+      clearInterval(timerInterval);
+      if (!tutorMode) finishBlock('time');
+    }
   }, 1000);
+}
+
+function trackCurrentQuestionTime() {
+  if (!activeBlock || !activeBlock.isNew || !activeBlock.itemStartedAt) return;
+  const qid = activeBlock.qIds[current];
+  const elapsed = Math.max(0, Math.round((Date.now() - activeBlock.itemStartedAt) / 1000));
+  activeBlock.timeSpent[qid] = (activeBlock.timeSpent[qid] || 0) + elapsed;
+  activeBlock.itemStartedAt = Date.now();
 }
 
 function toggleLabs() { document.getElementById('labPopup').classList.toggle('show'); }
@@ -1935,6 +2038,11 @@ function renderFlagBtn() {
 function toggleMode() {
   tutorMode = !tutorMode;
   document.getElementById('modeBtn').textContent = `Tutor Mode: ${tutorMode ? 'ON' : 'OFF'}`;
+  if (!tutorMode && activeBlock && activeBlock.isNew && (activeBlock.remainingSeconds || 0) <= 0) {
+    finishBlock('time');
+    return;
+  }
+  if (activeBlock && activeBlock.isNew && tutorMode && (activeBlock.remainingSeconds || 0) <= 0) updateTimerDisplay();
   renderBlockQuestion();
 }
 
@@ -1958,7 +2066,45 @@ function toggleStrike(letter) {
   renderBlockQuestion();
 }
 
+function suspendBlock() {
+  if (!activeBlock || !activeBlock.isNew) return;
+  trackCurrentQuestionTime();
+  clearInterval(timerInterval);
+  const id = activeBlock.resumeTestId || ('s' + Date.now());
+  const record = {
+    id,
+    status: 'suspended',
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    title: activeBlock.title,
+    qIds: activeBlock.qIds,
+    answers: { ...activeBlock.answers },
+    flagged: { ...activeBlock.flagged },
+    struck: { ...activeBlock.struck },
+    highlights: { ...activeBlock.highlights },
+    timeSpent: { ...activeBlock.timeSpent },
+    total: activeBlock.qIds.length,
+    current,
+    tutorMode,
+    totalSeconds: activeBlock.totalSeconds,
+    remainingSeconds: activeBlock.remainingSeconds,
+    expectedSecondsPerQuestion: activeBlock.expectedSecondsPerQuestion || SECONDS_PER_QUESTION
+  };
+  const idx = pastTests.findIndex(t => t.id === id);
+  if (idx >= 0) pastTests[idx] = record;
+  else pastTests.push(record);
+  saveUserTests();
+  activeBlock = null;
+  goScreen('tests');
+}
+
 function exitBlockToDashboard() {
+  if (activeBlock && activeBlock.isNew) {
+    if (confirm('Suspend this block and return to the dashboard? You can resume it from Previous Tests.')) {
+      suspendBlock();
+      return;
+    }
+    return;
+  }
   clearInterval(timerInterval);
   goScreen('dashboard');
 }
@@ -1971,7 +2117,15 @@ function renderBlockQuestion() {
 
   document.getElementById('itemCounter').textContent = `Item ${current+1} of ${activeBlock.qIds.length}`;
   renderFlagBtn();
-  if (activeBlock.isNew) startTimer(); else { clearInterval(timerInterval); document.getElementById('timer').textContent = '--:--'; }
+  if (!activeBlock.isNew) { clearInterval(timerInterval); document.getElementById('timer').textContent = '--:--'; }
+  else updateTimerDisplay();
+
+  const spent = activeBlock.timeSpent && activeBlock.timeSpent[qid] ? activeBlock.timeSpent[qid] : 0;
+  const expected = activeBlock.expectedSecondsPerQuestion || SECONDS_PER_QUESTION;
+  const timeClass = spent > expected ? 'time-pill over' : 'time-pill';
+  const timeHtml = !activeBlock.isNew
+    ? `<div class="time-row"><span class="${timeClass}">Time: ${formatTime(spent)}</span><span class="time-pill">Target: ${formatTime(expected)}</span></div>`
+    : '';
 
   let choicesHtml = q.choices.map(c => {
     let cls = 'choice';
@@ -1983,12 +2137,13 @@ function renderBlockQuestion() {
       else if (c.letter === userAnswer) { cls += ' wrong-selected'; mark = '✗ Your answer'; }
       cls += ' disabled';
     }
-    const letterClick = showExplanation ? '' : `onclick="selectChoice('${c.letter}')"`;
+    const circleClick = showExplanation ? '' : `onclick="selectChoice('${c.letter}')"`;
     const textClick = showExplanation ? '' : `onclick="toggleStrike('${c.letter}')"`;
     const hStore = activeBlock.highlights[current] || {};
     const choiceContent = (hStore.choiceText && hStore.choiceText[c.letter] !== undefined) ? hStore.choiceText[c.letter] : c.text;
     return `<div class="${cls}">
-      <span class="letter" ${letterClick}>${c.letter}</span>
+      <span class="select-circle" ${circleClick} title="Select ${c.letter}"></span>
+      <span class="letter">${c.letter}.</span>
       <span class="ctext hl-zone${isStruck ? ' struck' : ''}" data-zone="choice-${c.letter}" ${textClick}>${choiceContent}</span>
       ${mark ? `<span class="mark">${mark}</span>` : ''}
     </div>`;
@@ -2015,9 +2170,11 @@ function renderBlockQuestion() {
 
   document.getElementById('questionArea').innerHTML = `
     <div class="vignette hl-zone" data-zone="stem">${vignetteInner}</div>
+    ${timeHtml}
     <div class="choices">${choicesHtml}</div>
     <div class="actions">
       ${current > 0 ? `<button class="btn btn-ghost" onclick="goToItem(${current-1})">← Previous</button>` : ''}
+      ${activeBlock.isNew ? `<button class="btn btn-ghost" onclick="suspendBlock()">Suspend block</button>` : ''}
       ${current < activeBlock.qIds.length - 1
         ? `<button class="btn btn-primary" onclick="goToItem(${current+1})">Next →</button>`
         : (activeBlock.isNew ? `<button class="btn btn-primary" onclick="finishBlock()">End Block</button>` : `<button class="btn btn-dark" onclick="goScreen('tests')">Back to Previous Tests</button>`)}
@@ -2028,9 +2185,17 @@ function renderBlockQuestion() {
   if (aiOpen) renderAIPanel();
 }
 
-function goToItem(idx) { current = idx; renderBlockQuestion(); }
+function goToItem(idx) {
+  if (idx === current) return;
+  trackCurrentQuestionTime();
+  current = idx;
+  if (activeBlock && activeBlock.isNew) activeBlock.itemStartedAt = Date.now();
+  renderBlockQuestion();
+}
 
-function finishBlock() {
+function finishBlock(reason = 'manual') {
+  if (!activeBlock || !activeBlock.isNew) return;
+  trackCurrentQuestionTime();
   clearInterval(timerInterval);
   let score = 0;
   activeBlock.qIds.forEach(qid => {
@@ -2038,18 +2203,31 @@ function finishBlock() {
     if (activeBlock.answers[qid] === q.correct) score++;
   });
   const total = activeBlock.qIds.length;
+  const totalTimeUsed = Math.max(0, (activeBlock.totalSeconds || (total * SECONDS_PER_QUESTION)) - (activeBlock.remainingSeconds || 0));
 
-  pastTests.push({
-    id: 't' + (pastTests.length + 1),
+  const completed = {
+    id: activeBlock.resumeTestId || ('t' + Date.now()),
+    status: 'completed',
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     title: activeBlock.title,
     qIds: activeBlock.qIds,
     answers: { ...activeBlock.answers },
+    flagged: { ...activeBlock.flagged },
+    struck: { ...activeBlock.struck },
+    highlights: { ...activeBlock.highlights },
+    timeSpent: { ...activeBlock.timeSpent },
+    expectedSecondsPerQuestion: activeBlock.expectedSecondsPerQuestion || SECONDS_PER_QUESTION,
+    totalSeconds: activeBlock.totalSeconds || (total * SECONDS_PER_QUESTION),
+    totalTimeUsed,
+    finishReason: reason,
     score, total
-  });
+  };
+  const existingIdx = activeBlock.resumeTestId ? pastTests.findIndex(t => t.id === activeBlock.resumeTestId) : -1;
+  if (existingIdx >= 0) pastTests[existingIdx] = completed;
+  else pastTests.push(completed);
   saveUserTests();
 
-  // Increment free block usage counter
+  // Increment free block usage counter only when a block is actually completed/submitted.
   if (!isSubscribed) {
     blocksUsed++;
     saveSubscriptionState();
@@ -2058,7 +2236,7 @@ function finishBlock() {
   document.getElementById('scoreSummary').style.display = 'block';
   document.getElementById('scoreBig').textContent = `${score}/${total}`;
 
-  activeBlock.isNew = false;
+  activeBlock = { ...activeBlock, ...completed, isNew: false, status: 'completed' };
   renderBlockQuestion();
 }
 
@@ -2350,7 +2528,7 @@ function saveZoneHighlights() {
 Object.assign(window, {
   goScreen, doLogout, openResetModal, closeResetModal, confirmReset,
   renderCreateScreen, toggleTag, toggleSelectAll, updateQCount, generateTest,
-  reviewTest, goToItem, finishBlock, exitBlockToDashboard,
+  openTest, reviewTest, resumeTest, goToItem, finishBlock, suspendBlock, exitBlockToDashboard,
   toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
   applyHighlight, renderTestsList,
   toggleAI, generateAISummary, askAIQuestion, askSuggestedAI,
@@ -2749,5 +2927,6 @@ document.addEventListener('keydown', e => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
