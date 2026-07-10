@@ -41,6 +41,19 @@
 
   /* ============ APP SHELL / SCREENS ============ */
   .screen { display: none; min-height: 100vh; }
+
+  .boot-loader {
+    position: fixed; inset: 0; background: var(--ink); color: var(--paper);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    font-family: var(--sans); flex-direction: column; gap: 14px;
+  }
+  .boot-loader .spinner {
+    width: 34px; height: 34px; border: 3px solid rgba(255,255,255,0.18);
+    border-top-color: var(--clinical-blue); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  .boot-loader .boot-brand { font-family: var(--mono); font-weight: 700; letter-spacing: .04em; }
+  .boot-loader .boot-sub { color: #B7B5AC; font-size: 13px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .screen.active { display: block; }
 
   /* ============ APP TOPBAR (shared across logged-in screens) ============ */
@@ -986,6 +999,13 @@
 </head>
 <body>
 
+
+<div class="boot-loader" id="bootLoader">
+  <div class="spinner"></div>
+  <div class="boot-brand">MEDCHANIC.MD</div>
+  <div class="boot-sub">Loading your dashboard…</div>
+</div>
+
 <!-- ===================== DASHBOARD ===================== -->
 <div class="screen" id="screen-dashboard">
   <div class="app-topbar">
@@ -1654,16 +1674,43 @@ async function doLogout() {
   window.location.href = 'index.html';
 }
 
+
+function splitStemLeadIn(rawStem='') {
+  const text = String(rawStem || '').trim();
+  if (!text) return { stem: '', question: '' };
+
+  // Preferred format: vignette paragraphs, blank line, lead-in question.
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const questionStart = /^(which|what|where|when|why|how|the presence|the absence|this patient|this finding|these findings)\b/i;
+  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1]) && questionStart.test(paras[paras.length - 1])) {
+    return { stem: paras.slice(0, -1).join('\n\n'), question: paras[paras.length - 1] };
+  }
+
+  // Fallback for single-paragraph stems: split at the final question sentence.
+  const matches = [...text.matchAll(/(?:^|\s)((?:Which|What|Where|When|Why|How)\b[^?]+\?)/g)];
+  if (matches.length) {
+    const m = matches[matches.length - 1];
+    const q = m[1].trim();
+    const idx = m.index + (m[0].startsWith(' ') ? 1 : 0);
+    const stemOnly = text.slice(0, idx).trim();
+    return { stem: stemOnly, question: q };
+  }
+
+  return { stem: text, question: '' };
+}
+
 // Convert a flat database row back into a full question object
 function unpackQuestion(doc) {
   let content = {};
   try { content = JSON.parse(doc.content); } catch (e) {}
+  const split = splitStemLeadIn(doc.stem || '');
   return {
     id: doc.$id,
     subject: doc.subject,
     system: doc.system,
-    stem: doc.stem,
-    question: doc.stem.split('\n').filter(l => l.trim()).pop(),
+    rawStem: doc.stem,
+    stem: split.stem,
+    question: split.question,
     correct: doc.correct,
     objective: doc.objective,
     choices:  content.choices  || [],
@@ -1712,10 +1759,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUserPill();
     await loadUserData();
     await loadSubscriptionState();
-    await loadDatabaseQuestions();
     handlePaymentReturnNotice();
+
+    // Show the dashboard immediately; load the QBank in the background so the user does not see a blank page.
     goScreen('dashboard');
+    const loader = document.getElementById('bootLoader');
+    if (loader) loader.style.display = 'none';
+
+    loadDatabaseQuestions().then(() => {
+      renderDashboard();
+      if (document.getElementById('screen-create').classList.contains('active')) renderCreateScreen();
+    }).catch(err => console.error('Could not load questions:', err));
   } catch (err) {
+    const loader = document.getElementById('bootLoader');
+    if (loader) loader.querySelector('.boot-sub').textContent = 'Redirecting to login…';
     window.location.href = 'index.html';
   }
 });
@@ -2285,7 +2342,7 @@ function renderBlockQuestion() {
   }
 
   const hStore = activeBlock.highlights[current] || {};
-  const vignetteInner = `<span class="qnum">Item ${current+1} · ${q.subject}</span>${hStore.stem !== undefined ? hStore.stem : q.stem}<p style="margin-top:16px; font-weight:600;">${q.question}</p>`;
+  const vignetteInner = `<span class="qnum">Item ${current+1} · ${q.subject}</span>${hStore.stem !== undefined ? hStore.stem : q.stem}${q.question ? `<p style="margin-top:16px; font-weight:600;">${q.question}</p>` : ''}`;
 
   document.getElementById('questionArea').innerHTML = `
     <div class="vignette hl-zone" data-zone="stem">${vignetteInner}</div>
@@ -3047,5 +3104,6 @@ document.addEventListener('keydown', e => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
