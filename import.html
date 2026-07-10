@@ -72,6 +72,14 @@
   .bulk-zone { border:1px solid #F2C5C5; background:#FFF7F7; border-radius:14px; padding:16px; margin-top:16px; }
   .bulk-grid { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; }
   @media(max-width:700px){ .bulk-grid { grid-template-columns:1fr; } }
+
+  .quality-panel { border:1px solid var(--line); border-radius:14px; background:#FBFBFA; padding:14px; margin-top:14px; }
+  .flaw-row { border:1px solid var(--line); background:white; border-radius:12px; padding:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr auto; gap:10px; }
+  .flaw-title { font-weight:800; font-size:13.5px; color:#1F2937; line-height:1.35; }
+  .flaw-list { margin:6px 0 0; padding-left:18px; color:#8A2520; font-size:12.5px; line-height:1.45; }
+  .edit-banner { display:none; border:1px solid #D7E6F7; background:#F4F8FD; color:#315272; border-radius:14px; padding:12px 14px; margin-bottom:12px; font-size:13px; }
+  .edit-banner.show { display:block; }
+
 </style>
 </head>
 <body>
@@ -106,6 +114,7 @@
             <div>
               <label for="jsonInput">Questions JSON</label>
               <input id="jsonFile" type="file" accept=".json,application/json" onchange="loadJsonFile(event)" style="margin-bottom:10px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif;" />
+              <div class="edit-banner" id="editBanner"></div>
               <textarea id="jsonInput" spellcheck="false" placeholder="Paste JSON here, or choose a .json file above…"></textarea>
               <div class="checkline">
                 <input id="skipDupes" type="checkbox" checked>
@@ -115,6 +124,8 @@
                 <button class="secondary" onclick="loadSample()">Load sample</button>
                 <button class="primary" onclick="validateOnly()">Validate + preview</button>
                 <button class="darkbtn" id="importBtn" onclick="importQuestions()">Import to database</button>
+                <button class="primary" id="updateBtn" onclick="updateSelectedQuestion()" style="display:none;">Update selected question</button>
+                <button class="secondary" id="cancelEditBtn" onclick="cancelEditQuestion()" style="display:none;">Cancel edit</button>
                 <button class="danger" onclick="clearInput()">Clear</button>
               </div>
             </div>
@@ -153,10 +164,13 @@
             <select id="dbSystemFilter" onchange="renderQBankList()"><option value="">All systems</option></select>
           </div>
           <div class="btnrow" style="margin-top:0;margin-bottom:14px;">
+            <button class="primary" onclick="scanQBankQuality()">Scan for flaws</button>
+            <label class="checkline" style="margin:0;"><input type="checkbox" id="showFlawedOnly" onchange="renderQBankList()"> Show flawed only</label>
             <button class="secondary" onclick="analyzeDuplicates()">Analyze duplicates</button>
             <button class="danger" onclick="deleteDuplicateQuestions()">Delete duplicate rows</button>
           </div>
           <div id="dbStats" class="small">Load the QBank to begin.</div>
+          <div id="qualityPanel" class="quality-panel" style="display:none;"></div>
           <div id="qbankList" style="margin-top:12px;"></div>
           <div class="preview-nav">
             <button class="secondary mini" onclick="dbPrevPage()">← Previous page</button>
@@ -225,6 +239,8 @@ let existingStems = new Set();
 let previewItems = [];
 let previewIndex = 0;
 let qbankDocs = [];
+let qbankFlaws = new Map();
+let editingDocId = null;
 let dbPage = 0;
 const DB_PAGE_SIZE = 20;
 
@@ -236,6 +252,28 @@ function hideBoxes() { $('okBox').style.display = 'none'; $('errBox').style.disp
 function escapeHtml(str='') { return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function stripHtml(html='') { const div = document.createElement('div'); div.innerHTML = html; return div.textContent || div.innerText || ''; }
 function textToHtml(str='') { return `<p>${escapeHtml(str).replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')}</p>`; }
+
+function splitStemLeadIn(rawStem='') {
+  const text = String(rawStem || '').trim();
+  if (!text) return { stem: '', question: '' };
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const questionStart = /^(which|what|where|when|why|how|the presence|the absence|this patient|this finding|these findings)\b/i;
+  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1]) && questionStart.test(paras[paras.length - 1])) {
+    return { stem: paras.slice(0, -1).join('\n\n'), question: paras[paras.length - 1] };
+  }
+  const matches = [...text.matchAll(/(?:^|\s)((?:Which|What|Where|When|Why|How)\b[^?]+\?)/g)];
+  if (matches.length) {
+    const m = matches[matches.length - 1];
+    const q = m[1].trim();
+    const idx = m.index + (m[0].startsWith(' ') ? 1 : 0);
+    return { stem: text.slice(0, idx).trim(), question: q };
+  }
+  return { stem: text, question: '' };
+}
+function looksPlaceholder(v='') {
+  return /Question Stem\s*\d+|Objective\s*\d+|Rationale\s*\d+|Explanation\s*[A-E]\b|High Yield question|\.\.\.$|^\.\.\.$/i.test(String(v || '').trim());
+}
+
 function normalizeStemForDedupe(stem='') { return String(stem).toLowerCase().replace(/\s+/g,' ').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").trim(); }
 function truncate(str='', n=180) { str = String(str).replace(/\s+/g,' ').trim(); return str.length > n ? str.slice(0,n) + '…' : str; }
 
@@ -379,7 +417,9 @@ function renderPreview() {
     </div>
     ${item.errors.length ? `<div class="errorBox" style="display:block;margin-bottom:12px;">${escapeHtml(item.errors.join('\n'))}</div>` : ''}
     <h3>Stem preview</h3>
-    <div class="preview-stem">${escapeHtml(q.stem || '[EMPTY STEM]')}</div>
+    <div class="preview-stem">${escapeHtml(splitStemLeadIn(q.stem || '').stem || '[EMPTY STEM]')}</div>
+    <h3 style="margin-top:16px;">Lead-in question</h3>
+    <div class="explain" style="font-weight:800;">${escapeHtml(splitStemLeadIn(q.stem || '').question || '[NO LEAD-IN DETECTED]')}</div>
     <h3 style="margin-top:16px;">Choices</h3>
     ${choicesHtml || '<div class="small">No choices parsed.</div>'}
     <h3 style="margin-top:16px;">Objective</h3>
@@ -503,6 +543,7 @@ function getFilteredDocs() {
   const subj = $('dbSubjectFilter').value;
   const sys = $('dbSystemFilter').value;
   return qbankDocs.filter(d => {
+    if ($('showFlawedOnly') && $('showFlawedOnly').checked && !qbankFlaws.has(d.$id)) return false;
     if (subj && d.subject !== subj) return false;
     if (sys && d.system !== sys) return false;
     if (!search) return true;
@@ -538,6 +579,7 @@ window.renderQBankList = function renderQBankList() {
       </div>
       <div class="qrow-actions">
         <button class="secondary mini" onclick="previewDbQuestion('${doc.$id}')">Preview</button>
+        <button class="primary mini" onclick="editQuestionById('${doc.$id}')">Edit</button>
         <button class="danger mini" onclick="deleteQuestionById('${doc.$id}')">Delete</button>
       </div>
     </div>`;
@@ -561,7 +603,8 @@ window.previewDbQuestion = function previewDbQuestion(id) {
       <span class="pill">Correct: ${escapeHtml(q.correct)}</span>
       <span class="pill">ID: ${escapeHtml(id)}</span>
     </div>
-    <h3>Stem preview</h3><div class="preview-stem">${escapeHtml(q.stem || '[EMPTY STEM]')}</div>
+    <h3>Stem preview</h3><div class="preview-stem">${escapeHtml(splitStemLeadIn(q.stem || '').stem || '[EMPTY STEM]')}</div>
+    <h3 style="margin-top:16px;">Lead-in question</h3><div class="explain" style="font-weight:800;">${escapeHtml(splitStemLeadIn(q.stem || '').question || '[NO LEAD-IN DETECTED]')}</div>
     <h3 style="margin-top:16px;">Choices</h3>${choicesHtml}
     <h3 style="margin-top:16px;">Objective</h3><div class="explain">${escapeHtml(q.objective || '[EMPTY OBJECTIVE]')}</div>
     <h3 style="margin-top:16px;">Rationale / explanation</h3><div class="explain">${escapeHtml(q.rationale || '[EMPTY RATIONALE]')}</div>
@@ -663,6 +706,131 @@ window.deleteDuplicateQuestions = async function deleteDuplicateQuestions() {
   } catch(e) { showBox('errBox', e.message || 'Could not delete duplicates.'); }
 }
 
+
+function detectQuestionFlaws(doc, allDocs = []) {
+  const flaws = [];
+  const q = unpackDoc(doc);
+  const split = splitStemLeadIn(q.stem || '');
+  const norm = normalizeStemForDedupe(q.stem || '');
+  const dupCount = allDocs.filter(d => normalizeStemForDedupe(d.stem || '') === norm).length;
+
+  if (!q.subject || !SUBJECTS.has(q.subject)) flaws.push(`Unknown/missing subject: ${q.subject || 'empty'}`);
+  if (!q.system || !SYSTEMS.has(q.system)) flaws.push(`Unknown/missing system: ${q.system || 'empty'}`);
+  if (!q.stem || q.stem.length < 25) flaws.push('Stem is missing or suspiciously short.');
+  if (looksPlaceholder(q.stem)) flaws.push('Stem appears to contain placeholder text.');
+  if (!split.question || !/\?\s*$/.test(split.question)) flaws.push('No clear lead-in question detected at end of stem.');
+  if (split.stem && normalizeStemForDedupe(split.stem).includes(normalizeStemForDedupe(split.question)) && split.question.length > 20) flaws.push('Lead-in may be repeated inside the stem.');
+
+  if (!Array.isArray(q.choices) || q.choices.length !== 5) flaws.push(`Expected 5 choices, found ${q.choices ? q.choices.length : 0}.`);
+  if (Array.isArray(q.choices)) {
+    const simpleLetters = q.choices.filter(c => /^[A-E]$/.test(String(c.text || c))).length;
+    if (simpleLetters >= 3) flaws.push('Choices look like placeholders (A/B/C/D/E).');
+    const choiceTexts = q.choices.map(c => normalizeStemForDedupe(c.text || c)).filter(Boolean);
+    if (new Set(choiceTexts).size !== choiceTexts.length) flaws.push('Duplicate answer choices detected.');
+    q.choices.forEach(c => { if (looksPlaceholder(c.text || c)) flaws.push(`Choice ${c.letter || ''} appears placeholder.`); });
+  }
+
+  if (!/^[A-E]$/.test(q.correct || '')) flaws.push(`Invalid correct answer: ${q.correct || 'empty'}`);
+  if (!q.objective || q.objective.length < 15) flaws.push('Objective is missing or too short.');
+  if (looksPlaceholder(q.objective)) flaws.push('Objective appears placeholder.');
+  if (!q.rationale || q.rationale.length < 40) flaws.push('Rationale/explanation is missing or too short.');
+  if (looksPlaceholder(q.rationale)) flaws.push('Rationale appears placeholder.');
+
+  if (!Array.isArray(q.whyWrong) || q.whyWrong.length < 4) flaws.push('whyWrong is missing or incomplete.');
+  if (Array.isArray(q.whyWrong)) {
+    q.whyWrong.forEach(w => { if (!w.text || w.text.length < 10 || looksPlaceholder(w.text)) flaws.push(`whyWrong ${w.letter || ''} is missing/placeholder.`); });
+  }
+  if (dupCount > 1) flaws.push(`Duplicate stem appears ${dupCount} times.`);
+  return flaws;
+}
+
+window.scanQBankQuality = function scanQBankQuality() {
+  qbankFlaws = new Map();
+  const all = qbankDocs || [];
+  all.forEach(doc => {
+    const flaws = detectQuestionFlaws(doc, all);
+    if (flaws.length) qbankFlaws.set(doc.$id, flaws);
+  });
+  const panel = $('qualityPanel');
+  panel.style.display = 'block';
+  const flawDocs = [...qbankFlaws.entries()];
+  if (!flawDocs.length) {
+    panel.innerHTML = '<span class="pill green">No obvious flaws detected</span><div class="small" style="margin-top:8px;">This scan checks placeholders, malformed choices, missing explanations, duplicate stems, and lead-in issues.</div>';
+  } else {
+    panel.innerHTML = `<div style="margin-bottom:10px;"><span class="pill red">${flawDocs.length} flagged question(s)</span> <span class="small">Use Show flawed only, then Preview/Edit.</span></div>` + flawDocs.slice(0, 8).map(([id, flaws]) => {
+      const doc = qbankDocs.find(d => d.$id === id);
+      const q = unpackDoc(doc || {});
+      return `<div class="flaw-row"><div><div class="flaw-title">${escapeHtml(truncate(q.stem || id, 130))}</div><ul class="flaw-list">${flaws.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul></div><div><button class="secondary mini" onclick="previewDbQuestion('${id}')">Preview</button><button class="primary mini" style="margin-top:6px;" onclick="editQuestionById('${id}')">Edit</button></div></div>`;
+    }).join('') + (flawDocs.length > 8 ? `<div class="small">Showing first 8. Check "Show flawed only" to view all.</div>` : '');
+  }
+  const cb = $('showFlawedOnly');
+  if (cb) cb.checked = flawDocs.length > 0;
+  dbPage = 0;
+  renderQBankList();
+}
+
+window.editQuestionById = function editQuestionById(id) {
+  const doc = qbankDocs.find(d => d.$id === id);
+  if (!doc) return;
+  const q = unpackDoc(doc);
+  const why = {};
+  (q.whyWrong || []).forEach(w => { why[w.letter] = w.text; });
+  const source = [{
+    subject: q.subject,
+    system: q.system,
+    stem: q.stem,
+    choices: (q.choices || []).map(c => c.text),
+    correct: q.correct,
+    objective: q.objective,
+    rationale: q.rationale,
+    whyWrong: why
+  }];
+  editingDocId = id;
+  $('jsonInput').value = JSON.stringify(source, null, 2);
+  $('editBanner').innerHTML = `Editing existing question <code>${id}</code>. Fix the JSON, click <strong>Validate + preview</strong>, then <strong>Update selected question</strong>.`;
+  $('editBanner').classList.add('show');
+  $('updateBtn').style.display = 'inline-block';
+  $('cancelEditBtn').style.display = 'inline-block';
+  $('importBtn').disabled = true;
+  validateOnly();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.cancelEditQuestion = function cancelEditQuestion() {
+  editingDocId = null;
+  $('editBanner').classList.remove('show');
+  $('updateBtn').style.display = 'none';
+  $('cancelEditBtn').style.display = 'none';
+  $('importBtn').disabled = false;
+  clearInput();
+}
+
+window.updateSelectedQuestion = async function updateSelectedQuestion() {
+  if (!editingDocId) { alert('No question selected for editing.'); return; }
+  hideBoxes();
+  try {
+    const normalized = parseInput();
+    if (normalized.length !== 1) throw new Error('Update mode requires exactly one question object in the JSON array.');
+    const item = normalized[0];
+    if (item.errors.length) throw new Error(item.errors.join('\n'));
+    const ok = confirm('Update this existing QBank question?');
+    if (!ok) return;
+    await databases.updateDocument(DATABASE_ID, COLLECTION_ID, editingDocId, item.doc);
+    setStatus(`Updated question ${editingDocId}.`);
+    showBox('okBox', 'Question updated successfully.');
+    editingDocId = null;
+    $('editBanner').classList.remove('show');
+    $('updateBtn').style.display = 'none';
+    $('cancelEditBtn').style.display = 'none';
+    $('importBtn').disabled = false;
+    await refreshExisting();
+    await loadQBankManager();
+    scanQBankQuality();
+  } catch (e) {
+    showBox('errBox', 'Update failed: ' + (e.message || e));
+  }
+}
+
 window.loadSample = function loadSample() {
   $('jsonInput').value = JSON.stringify([
     {
@@ -705,10 +873,18 @@ window.clearInput = function clearInput() {
   $('jsonFile').value = '';
   previewItems = [];
   renderPreview();
+  if (editingDocId) {
+    editingDocId = null;
+    $('editBanner').classList.remove('show');
+    $('updateBtn').style.display = 'none';
+    $('cancelEditBtn').style.display = 'none';
+    $('importBtn').disabled = false;
+  }
   setStatus('Cleared.'); hideBoxes();
 }
 
 boot();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
