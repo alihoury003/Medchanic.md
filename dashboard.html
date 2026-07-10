@@ -1768,44 +1768,18 @@ const _databases = new Databases(_client);
 const _functions = new Functions(_client);
 
 async function listAllQuestionDocs() {
-  // Robust loader with multiple fallbacks. This fixes cases where one Appwrite access method fails silently.
-  const limit = 500;
+  // Robust public REST loader. This avoids SDK/session edge cases and loads the full public QBank.
+  const limit = 1000;
   let offset = 0;
   let all = [];
-
-  async function fetchBatch(currentOffset) {
-    const queries = [Query.limit(limit), Query.offset(currentOffset)];
-
-    // Preferred for Appwrite Web SDK v16+
-    try {
-      return await _databases.listDocuments({
-        databaseId: APPWRITE_DB_ID,
-        collectionId: APPWRITE_COL_ID,
-        queries
-      });
-    } catch (sdkObjectErr) {
-      console.warn('QBank SDK object fetch failed; trying positional SDK.', sdkObjectErr);
-    }
-
-    // Fallback for older SDK signatures
-    try {
-      return await _databases.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_ID, queries);
-    } catch (sdkPositionalErr) {
-      console.warn('QBank SDK positional fetch failed; trying public REST.', sdkPositionalErr);
-    }
-
-    // Last fallback: public REST using the collection's Any→Read permission
+  while (true) {
     const params = new URLSearchParams();
     params.append('queries[]', JSON.stringify({ method: 'limit', values: [limit] }));
-    params.append('queries[]', JSON.stringify({ method: 'offset', values: [currentOffset] }));
+    params.append('queries[]', JSON.stringify({ method: 'offset', values: [offset] }));
     const url = `https://nyc.cloud.appwrite.io/v1/databases/${APPWRITE_DB_ID}/collections/${APPWRITE_COL_ID}/documents?${params.toString()}`;
     const response = await fetch(url, { headers: { 'X-Appwrite-Project': '6a427cd000140ae72eb1' } });
-    if (!response.ok) throw new Error(`QBank REST fetch failed: ${response.status}`);
-    return await response.json();
-  }
-
-  while (true) {
-    const res = await fetchBatch(offset);
+    if (!response.ok) throw new Error(`QBank fetch failed: ${response.status}`);
+    const res = await response.json();
     const docs = res.documents || [];
     all = all.concat(docs);
     const total = typeof res.total === 'number' ? res.total : all.length;
@@ -1864,6 +1838,54 @@ function splitStemLeadIn(rawStem='') {
   return { stem: text, question: '' };
 }
 
+
+// ===== EMERGENCY QBank row converter fix v2 =====
+// Converts Appwrite question rows into in-browser question objects.
+function unpackQuestion(doc) {
+  let content = {};
+  try {
+    content = typeof doc.content === 'string' ? JSON.parse(doc.content || '{}') : (doc.content || {});
+  } catch (e) {
+    content = {};
+  }
+
+  const split = typeof splitStemLeadIn === 'function'
+    ? splitStemLeadIn(doc.stem || '')
+    : { stem: doc.stem || '', question: '' };
+
+  let choices = content.choices || [];
+  if (Array.isArray(choices)) {
+    choices = choices.map((c, i) => {
+      const fallbackLetter = ['A','B','C','D','E'][i] || '';
+      if (typeof c === 'string') return { letter: fallbackLetter, text: c };
+      return { letter: c.letter || fallbackLetter, text: c.text || '' };
+    });
+  } else {
+    choices = [];
+  }
+
+  let whyWrong = content.whyWrong || [];
+  if (!Array.isArray(whyWrong) && whyWrong && typeof whyWrong === 'object') {
+    whyWrong = Object.entries(whyWrong).map(([letter, text]) => ({ letter, text }));
+  }
+  if (!Array.isArray(whyWrong)) whyWrong = [];
+
+  return {
+    id: doc.$id,
+    subject: doc.subject || 'Miscellaneous',
+    system: doc.system || 'Miscellaneous (Multisystem)',
+    rawStem: doc.stem || '',
+    stem: split.stem || doc.stem || '',
+    question: split.question || '',
+    correct: doc.correct || '',
+    objective: doc.objective || '',
+    choices,
+    rationale: content.rationale || '',
+    whyWrong,
+    used: false
+  };
+}
+
 function normalizeStemForDedupe(stem='') {
   return String(stem)
     .toLowerCase()
@@ -1880,34 +1902,22 @@ async function loadDatabaseQuestions() {
     const seenStems = new Set(questionBank.map(q => normalizeStemForDedupe(q.stem || '')));
     let added = 0;
     let skippedDuplicates = 0;
-    let skippedErrors = 0;
-
     docs.forEach(doc => {
-      try {
-        const key = normalizeStemForDedupe(doc.stem || '');
-        if (key && seenStems.has(key)) { skippedDuplicates++; return; }
-        if (key) seenStems.add(key);
-        if (!questionBank.find(q => q.id === doc.$id)) {
-          questionBank.push(unpackQuestion(doc));
-          added++;
-        }
-      } catch (docErr) {
-        skippedErrors++;
-        console.warn('Skipped malformed question row:', doc.$id, docErr);
+      const key = normalizeStemForDedupe(doc.stem || '');
+      if (key && seenStems.has(key)) { skippedDuplicates++; return; }
+      if (key) seenStems.add(key);
+      if (!questionBank.find(q => q.id === doc.$id)) {
+        questionBank.push(unpackQuestion(doc));
+        added++;
       }
     });
-
-    window.__medchanicQBankDebug = { rowsFetched: docs.length, added, skippedDuplicates, skippedErrors, bankTotal: questionBank.length };
-    console.log(`Loaded ${docs.length} database rows. Added ${added} unique questions. Skipped ${skippedDuplicates} duplicate row(s). Row errors: ${skippedErrors}. Bank total: ${questionBank.length}`);
+    console.log('QBANK_UNPACK_FIX_V2_ACTIVE');
+    console.log(`Loaded ${docs.length} database rows. Added ${added} unique questions. Skipped ${skippedDuplicates} duplicate row(s). Bank total: ${questionBank.length}`);
   } catch (err) {
-    window.__medchanicQBankDebug = { error: String(err && err.message ? err.message : err) };
     console.error('Could not load questions from database:', err);
-    const totalEl = document.getElementById('totalCount');
-    if (totalEl) totalEl.textContent = 'load failed';
-    const unusedEl = document.getElementById('unusedCount');
-    if (unusedEl) unusedEl.textContent = '—';
   }
 }
+
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -1931,7 +1941,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).catch(err => {
       console.error('Could not load questions:', err);
       const totalEl = document.getElementById('totalCount');
-      if (totalEl) totalEl.textContent = 'load failed';
+      if (totalEl) totalEl.textContent = 'reload';
     });
   } catch (err) {
     const loader = document.getElementById('bootLoader');
@@ -3442,5 +3452,6 @@ document.addEventListener('keydown', e => {
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19345b60938e309',t:'MTc4MzcyNTM0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
