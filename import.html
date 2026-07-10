@@ -156,7 +156,7 @@
         </div>
         <div class="card-b">
           <div class="warn">
-            <strong>Delete permissions:</strong> for delete actions, temporarily enable <code>Users → Delete</code> on the Appwrite <code>questions</code> table. Remove it again after cleanup.
+            <strong>Permissions:</strong> for delete actions temporarily enable <code>Users → Delete</code>; for editing/bulk fixing temporarily enable <code>Users → Update</code> on the Appwrite <code>questions</code> table. Remove them again after cleanup.
           </div>
           <div class="db-controls">
             <input id="dbSearch" placeholder="Search stem/objective/id…" oninput="renderQBankList()">
@@ -165,6 +165,8 @@
           </div>
           <div class="btnrow" style="margin-top:0;margin-bottom:14px;">
             <button class="primary" onclick="scanQBankQuality()">Scan for flaws</button>
+            <button class="secondary" onclick="exportFlawedQuestions()">Export flawed JSON</button>
+            <button class="darkbtn" onclick="bulkUpdateByIds()">Bulk update by IDs</button>
             <label class="checkline" style="margin:0;"><input type="checkbox" id="showFlawedOnly" onchange="renderQBankList()"> Show flawed only</label>
             <button class="secondary" onclick="analyzeDuplicates()">Analyze duplicates</button>
             <button class="danger" onclick="deleteDuplicateQuestions()">Delete duplicate rows</button>
@@ -829,6 +831,110 @@ window.updateSelectedQuestion = async function updateSelectedQuestion() {
   } catch (e) {
     showBox('errBox', 'Update failed: ' + (e.message || e));
   }
+}
+
+
+function docToEditableJSON(doc, flaws = []) {
+  const q = unpackDoc(doc);
+  const whyWrongObj = {};
+  (q.whyWrong || []).forEach(w => { if (w && w.letter) whyWrongObj[w.letter] = w.text || ''; });
+  return {
+    $id: doc.$id,
+    flaws,
+    subject: q.subject,
+    system: q.system,
+    stem: q.stem,
+    choices: (q.choices || []).map(c => c.text || ''),
+    correct: q.correct,
+    objective: q.objective,
+    rationale: q.rationale,
+    whyWrong: whyWrongObj
+  };
+}
+
+function downloadJSON(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+window.exportFlawedQuestions = function exportFlawedQuestions() {
+  hideBoxes();
+  if (!qbankDocs.length) {
+    showBox('errBox', 'Load the QBank first, then scan for flaws.');
+    return;
+  }
+  if (!qbankFlaws || qbankFlaws.size === 0) {
+    scanQBankQuality();
+  }
+  const flawed = [...qbankFlaws.entries()].map(([id, flaws]) => {
+    const doc = qbankDocs.find(d => d.$id === id);
+    return doc ? docToEditableJSON(doc, flaws) : null;
+  }).filter(Boolean);
+  if (!flawed.length) {
+    showBox('okBox', 'No flawed questions to export.');
+    return;
+  }
+  downloadJSON('medchanic_flawed_questions_export.json', flawed);
+  setStatus(`Exported ${flawed.length} flawed question(s) as medchanic_flawed_questions_export.json.\n\nSend that file for repair. The $id field lets us update the exact database row later.`);
+  showBox('okBox', `Exported ${flawed.length} flawed question(s).`);
+}
+
+window.bulkUpdateByIds = async function bulkUpdateByIds() {
+  hideBoxes();
+  let arr;
+  try {
+    arr = JSON.parse($('jsonInput').value);
+  } catch (e) {
+    showBox('errBox', 'Invalid JSON: ' + e.message);
+    return;
+  }
+  if (!Array.isArray(arr) || arr.length === 0) {
+    showBox('errBox', 'Bulk update expects a JSON array of fixed questions with $id or id fields.');
+    return;
+  }
+  const missingIds = arr.filter(x => !(x.$id || x.id || x.documentId));
+  if (missingIds.length) {
+    showBox('errBox', `${missingIds.length} item(s) are missing $id/id/documentId. Use the exported flawed JSON as the repair template.`);
+    return;
+  }
+  const normalized = arr.map((q, i) => normalizeQuestion(q, i));
+  const errors = normalized.flatMap(x => x.errors);
+  if (errors.length) {
+    setStatus(`Bulk update validation failed. ${errors.length} issue(s):\n\n` + errors.join('\n'));
+    showBox('errBox', 'Fix validation errors before updating.');
+    previewItems = normalized;
+    previewIndex = 0;
+    renderPreview();
+    return;
+  }
+  const ok = confirm(`Update ${arr.length} existing QBank question(s) by ID? This will overwrite those rows.`);
+  if (!ok) return;
+  setStatus(`Bulk updating ${arr.length} question(s)…`);
+  let updated = 0, failed = 0;
+  for (let i = 0; i < arr.length; i++) {
+    const id = arr[i].$id || arr[i].id || arr[i].documentId;
+    try {
+      await databases.updateDocument(DATABASE_ID, COLLECTION_ID, id, normalized[i].doc);
+      updated++;
+      log(`UPDATED ${id}`);
+    } catch (e) {
+      failed++;
+      log(`FAILED ${id}: ${e.message || e}`);
+    }
+  }
+  await refreshExisting();
+  await loadQBankManager();
+  qbankFlaws = new Map();
+  const summary = `Bulk update complete. Updated: ${updated}. Failed: ${failed}.`;
+  log('\n' + summary);
+  showBox(failed ? 'errBox' : 'okBox', summary);
 }
 
 window.loadSample = function loadSample() {
