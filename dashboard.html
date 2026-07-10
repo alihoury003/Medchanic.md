@@ -211,6 +211,26 @@
   .action-card.primary .ac-title { color: var(--paper); }
   .action-card.primary .ac-sub { color: #C9C7BD; }
 
+
+  .mini-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 20px; }
+  .mini-stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; cursor: pointer; transition: border-color .12s, transform .1s; }
+  .mini-stat-card:hover { border-color: var(--clinical-blue); transform: translateY(-1px); }
+  .mini-stat-num { font-family: var(--mono); font-size: 28px; font-weight: 700; color: var(--clinical-blue); }
+  .mini-stat-label { font-family: var(--sans); font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .status-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+  .status-pill { border:1px solid var(--line); background: var(--panel); color: var(--ink-soft); border-radius: 999px; padding: 8px 12px; font-family: var(--sans); font-size: 13px; cursor: pointer; }
+  .status-pill.selected { background: var(--clinical-blue); border-color: var(--clinical-blue); color: white; }
+  .notebook-list { display: flex; flex-direction: column; gap: 10px; }
+  .notebook-row { border:1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+  .notebook-title { font-family: var(--sans); font-weight: 700; font-size: 14px; line-height: 1.35; }
+  .notebook-sub { font-family: var(--mono); color: var(--ink-faint); font-size: 11px; margin-top: 6px; }
+  .notebook-actions { display:flex; flex-direction:column; gap:8px; }
+  .issue-field { margin: 12px 0; }
+  .issue-field label { display:block; font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+  .issue-field select, .issue-field textarea { width:100%; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:6px; padding:9px; font-family:var(--sans); font-size:13px; }
+  .issue-field textarea { min-height: 100px; resize: vertical; }
+  @media (max-width: 800px) { .mini-stat-row { grid-template-columns: 1fr; } .notebook-row { grid-template-columns:1fr; } }
+
   .reset-zone {
     margin-top: 36px;
     padding-top: 20px;
@@ -1014,6 +1034,7 @@
       <button class="active" data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
       <a href="/cdn-cgi/l/email-protection#167b7372757e77787f757b7256717b777f7a3875797b" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
@@ -1062,6 +1083,21 @@
       </div>
     </div>
 
+    <div class="mini-stat-row">
+      <div class="mini-stat-card" onclick="startMarkedBlock()">
+        <div class="mini-stat-num" id="markedCountDash">0</div>
+        <div class="mini-stat-label">Marked questions</div>
+      </div>
+      <div class="mini-stat-card" onclick="goScreen('notebook')">
+        <div class="mini-stat-num" id="notebookCountDash">0</div>
+        <div class="mini-stat-label">High-yield notebook</div>
+      </div>
+      <div class="mini-stat-card">
+        <div class="mini-stat-num" id="streakDash">0</div>
+        <div class="mini-stat-label">Day streak</div>
+      </div>
+    </div>
+
     <div class="perf-card" id="perfCard">
       <div class="perf-card-header">
         <span class="perf-card-title">Performance by subject</span>
@@ -1079,6 +1115,16 @@
       </div>
       <div id="perfBreakdownSystem">
         <div class="perf-empty">Complete a test block to see your breakdown.</div>
+      </div>
+    </div>
+
+    <div class="perf-card" id="perfCardTopic">
+      <div class="perf-card-header">
+        <span class="perf-card-title">Performance by topic</span>
+        <span class="perf-card-sub" id="perfCardTopicSub"></span>
+      </div>
+      <div id="perfBreakdownTopic">
+        <div class="perf-empty">Complete a test block to see your topic breakdown.</div>
       </div>
     </div>
 
@@ -1110,6 +1156,7 @@
       <button data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button class="active" data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
     </div>
     <div class="user-pill" onclick="doLogout()">Log out</div>
   </div>
@@ -1132,6 +1179,16 @@
         <button class="ct-selectall" id="systemSelectAllBtn" onclick="toggleSelectAll('system')">Select all</button>
       </div>
       <div class="tag-grid" id="systemTags"></div>
+    </div>
+
+    <div class="ct-section">
+      <div class="ct-section-head"><span class="ct-label">Question pool</span></div>
+      <div class="status-filter" id="statusFilter">
+        <button class="status-pill selected" data-status="all" onclick="setQuestionStatus('all')">All</button>
+        <button class="status-pill" data-status="unused" onclick="setQuestionStatus('unused')">Unused</button>
+        <button class="status-pill" data-status="incorrect" onclick="setQuestionStatus('incorrect')">Incorrect/Omitted</button>
+        <button class="status-pill" data-status="marked" onclick="setQuestionStatus('marked')">Marked</button>
+      </div>
     </div>
 
     <div class="ct-section">
@@ -1158,12 +1215,33 @@
       <button data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button class="active" data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
     </div>
     <div class="user-pill" onclick="doLogout()">Log out</div>
   </div>
   <div class="tests-wrap">
     <div class="create-title" style="margin-bottom:24px;">Previous tests</div>
     <div id="testsList"></div>
+  </div>
+</div>
+
+
+<!-- ===================== NOTEBOOK ===================== -->
+<div class="screen" id="screen-notebook">
+  <div class="app-topbar">
+    <div class="brand" onclick="goScreen('dashboard')"><span class="mark">⚙</span>MEDCHANIC.MD</div>
+    <div class="app-nav">
+      <button data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
+      <button data-nav="create" onclick="goScreen('create')">Create Test</button>
+      <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button class="active" data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+    </div>
+    <div class="user-pill" onclick="doLogout()">Log out</div>
+  </div>
+  <div class="tests-wrap">
+    <div class="create-title" style="margin-bottom:8px;">High-yield notebook</div>
+    <div class="create-sub" style="margin-bottom:24px;">Saved explanations and concepts for rapid review.</div>
+    <div id="notebookList" class="notebook-list"></div>
   </div>
 </div>
 
@@ -1537,6 +1615,8 @@ const questionBank = [
 /* ===================== APP STATE ===================== */
 let pastTests = [];
 let usedQuestionIds = new Set();
+let notebookItems = [];
+let activityDates = [];
 
 /*
   Student progress (test history + used question IDs) is stored in
@@ -1550,6 +1630,8 @@ async function loadUserData() {
     const prefs = await _account.getPrefs();
     pastTests       = prefs.tests  ? JSON.parse(prefs.tests)  : [];
     usedQuestionIds = prefs.used   ? new Set(JSON.parse(prefs.used)) : new Set();
+    notebookItems   = prefs.notebook ? JSON.parse(prefs.notebook) : [];
+    activityDates   = prefs.activityDates ? JSON.parse(prefs.activityDates) : [];
   } catch (err) {
     // Fall back to localStorage if prefs unavailable
     try {
@@ -1557,8 +1639,10 @@ async function loadUserData() {
       const u = localStorage.getItem('mc_used');
       pastTests       = t ? JSON.parse(t) : [];
       usedQuestionIds = u ? new Set(JSON.parse(u)) : new Set();
+      notebookItems   = JSON.parse(localStorage.getItem('mc_notebook') || '[]');
+      activityDates   = JSON.parse(localStorage.getItem('mc_activity') || '[]');
     } catch (e) {
-      pastTests = []; usedQuestionIds = new Set();
+      pastTests = []; usedQuestionIds = new Set(); notebookItems = []; activityDates = [];
     }
   }
 }
@@ -1586,14 +1670,61 @@ async function saveUserUsed() {
   }
 }
 
+async function saveNotebook() {
+  if (!currentUser) return;
+  try {
+    const prefs = await _account.getPrefs();
+    prefs.notebook = JSON.stringify(notebookItems);
+    await _account.updatePrefs(prefs);
+  } catch (err) {
+    try { localStorage.setItem('mc_notebook', JSON.stringify(notebookItems)); } catch (e) {}
+  }
+}
+
+async function saveActivityDates() {
+  if (!currentUser) return;
+  try {
+    const prefs = await _account.getPrefs();
+    prefs.activityDates = JSON.stringify(activityDates);
+    await _account.updatePrefs(prefs);
+  } catch (err) {
+    try { localStorage.setItem('mc_activity', JSON.stringify(activityDates)); } catch (e) {}
+  }
+}
+
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function recordActivityToday() {
+  const t = todayKey();
+  if (!activityDates.includes(t)) {
+    activityDates.push(t);
+    activityDates = [...new Set(activityDates)].sort();
+    saveActivityDates();
+  }
+}
+
+function getCurrentStreak() {
+  const set = new Set(activityDates || []);
+  let d = new Date();
+  let streak = 0;
+  while (true) {
+    const key = d.toISOString().slice(0,10);
+    if (!set.has(key)) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
 function clearLocalUserData() {
   pastTests = [];
   usedQuestionIds = new Set();
+  activityDates = [];
 }
 
 async function clearAllUserProgress() {
   pastTests = [];
   usedQuestionIds = new Set();
+  activityDates = [];
   try {
     await _account.updatePrefs({ tests: '[]', used: '[]' });
   } catch (err) {
@@ -1603,6 +1734,7 @@ async function clearAllUserProgress() {
 
 let selectedSubjects = new Set();
 let selectedSystems = new Set();
+let selectedStatus = 'all';
 let activeBlock = null;
 let current = 0;
 let submitted = false;
@@ -1619,6 +1751,7 @@ function goScreen(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'create') renderCreateScreen();
   if (name === 'tests') renderTestsList();
+  if (name === 'notebook') renderNotebook();
 }
 
 /* ===================== APPWRITE AUTH + DATABASE ===================== */
@@ -1758,12 +1891,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ===================== DASHBOARD ===================== */
+
+function extractTopic(q) {
+  const obj = q && q.objective ? q.objective : '';
+  const parts = obj.split('—');
+  if (parts.length > 1 && parts[0].trim().length > 1 && parts[0].trim().length < 90) return parts[0].trim();
+  return 'General / untagged';
+}
+
+function getMarkedQuestionIds() {
+  const ids = new Set();
+  pastTests.forEach(t => {
+    const flagged = t.flagged || {};
+    Object.keys(flagged).forEach(idx => {
+      if (flagged[idx] && t.qIds && t.qIds[idx]) ids.add(t.qIds[idx]);
+    });
+  });
+  return ids;
+}
+
+function getIncorrectOrOmittedQuestionIds() {
+  const ids = new Set();
+  pastTests.forEach(t => {
+    if (t.status === 'suspended') return;
+    (t.qIds || []).forEach(qid => {
+      const q = questionBank.find(qq => qq.id === qid);
+      if (!q) return;
+      const ans = (t.answers || {})[qid];
+      if (!ans || ans !== q.correct) ids.add(qid);
+    });
+  });
+  return ids;
+}
+
+function notebookHas(qid) { return notebookItems.some(n => n.qid === qid); }
+
 function renderDashboard() {
   let correct = 0, incorrect = 0, omitted = 0, totalAnswered = 0;
   const bySubject = {};
   const bySystem  = {};
+  const byTopic   = {};
 
   pastTests.forEach(t => {
+    if (t.status === 'suspended') return;
     t.qIds.forEach(qid => {
       const q = questionBank.find(qq => qq.id === qid);
       if (!q) return;
@@ -1784,6 +1954,12 @@ function renderDashboard() {
         if (!bySystem[q.system]) bySystem[q.system] = { correct: 0, total: 0 };
         bySystem[q.system].total++;
         if (ans === q.correct) bySystem[q.system].correct++;
+
+        // Topic/tag
+        const topic = extractTopic(q);
+        if (!byTopic[topic]) byTopic[topic] = { correct: 0, total: 0 };
+        byTopic[topic].total++;
+        if (ans === q.correct) byTopic[topic].correct++;
       }
     });
   });
@@ -1839,6 +2015,15 @@ function renderDashboard() {
 
   renderPerfBars(bySubject, 'perfBreakdown',       'perfCardSub');
   renderPerfBars(bySystem,  'perfBreakdownSystem',  'perfCardSystemSub');
+  renderPerfBars(byTopic,   'perfBreakdownTopic',   'perfCardTopicSub');
+
+  const markedCount = getMarkedQuestionIds().size;
+  const markedEl = document.getElementById('markedCountDash');
+  if (markedEl) markedEl.textContent = markedCount;
+  const noteEl = document.getElementById('notebookCountDash');
+  if (noteEl) noteEl.textContent = notebookItems.length;
+  const streakEl = document.getElementById('streakDash');
+  if (streakEl) streakEl.textContent = getCurrentStreak();
 }
 
 /* ===================== RESET ===================== */
@@ -1868,6 +2053,8 @@ function renderCreateScreen() {
     return `<span class="tag" data-val="${s}" onclick="toggleTag('system','${s}')">${s}${count ? ` <span class="count">${count}</span>` : ''}</span>`;
   }).join('');
 
+  selectedStatus = 'all';
+  document.querySelectorAll('#statusFilter .status-pill').forEach(b => b.classList.toggle('selected', b.dataset.status === 'all'));
   document.getElementById('qcountSlider').value = Math.min(40, Math.max(1, questionBank.length || 1));
   updateTagVisuals('subject');
   updateTagVisuals('system');
@@ -1889,6 +2076,21 @@ function updateTagVisuals(type) {
   updateSelectAllButtons();
 }
 
+
+function setQuestionStatus(status) {
+  selectedStatus = status;
+  document.querySelectorAll('#statusFilter .status-pill').forEach(b => b.classList.toggle('selected', b.dataset.status === status));
+  updateQCount();
+}
+
+function statusAllowsQuestion(q) {
+  if (selectedStatus === 'all') return true;
+  if (selectedStatus === 'unused') return !usedQuestionIds.has(q.id);
+  if (selectedStatus === 'incorrect') return getIncorrectOrOmittedQuestionIds().has(q.id);
+  if (selectedStatus === 'marked') return getMarkedQuestionIds().has(q.id);
+  return true;
+}
+
 function toggleTag(type, val) {
   const set = type === 'subject' ? selectedSubjects : selectedSystems;
   if (set.has(val)) set.delete(val); else set.add(val);
@@ -1907,7 +2109,7 @@ function toggleSelectAll(type) {
 
 function matchingQuestions() {
   if (selectedSubjects.size === 0 || selectedSystems.size === 0) return [];
-  return questionBank.filter(q => selectedSubjects.has(q.subject) && selectedSystems.has(q.system));
+  return questionBank.filter(q => selectedSubjects.has(q.subject) && selectedSystems.has(q.system) && statusAllowsQuestion(q));
 }
 
 function updateQCount() {
@@ -1958,7 +2160,7 @@ function generateTest() {
     totalSeconds,
     remainingSeconds: totalSeconds,
     itemStartedAt: Date.now(),
-    title: `${selectedSubjects.size === SUBJECTS.length ? 'All Subjects' : [...selectedSubjects].slice(0,2).join(', ') + (selectedSubjects.size > 2 ? '…' : '')}`,
+    title: `${selectedSubjects.size === SUBJECTS.length ? 'All Subjects' : [...selectedSubjects].slice(0,2).join(', ') + (selectedSubjects.size > 2 ? '…' : '')}${selectedStatus !== 'all' ? ' · ' + selectedStatus : ''}`,
     isNew: true,
     status: 'active'
   };
@@ -1968,6 +2170,83 @@ function generateTest() {
   goScreen('block');
   startBlockTimer();
   renderBlockQuestion();
+}
+
+
+function startBlockFromIds(ids, title = 'Custom Review') {
+  if (!ids || ids.length === 0) { alert('No questions available for this mode yet.'); return; }
+  if (!isSubscribed && blocksUsed >= FREE_BLOCK_LIMIT) { showPaywall(); return; }
+  const unique = [...new Set(ids)].filter(id => questionBank.find(q => q.id === id));
+  const chosen = unique.sort(() => Math.random() - 0.5).slice(0, 40).map(id => questionBank.find(q => q.id === id));
+  const n = chosen.length;
+  const totalSeconds = n * SECONDS_PER_QUESTION;
+  activeBlock = {
+    qIds: chosen.map(q => q.id), answers: {}, flagged: {}, struck: {}, highlights: {}, timeSpent: {},
+    expectedSecondsPerQuestion: SECONDS_PER_QUESTION, totalSeconds, remainingSeconds: totalSeconds,
+    itemStartedAt: Date.now(), title, isNew: true, status: 'active'
+  };
+  current = 0; submitted = false;
+  document.getElementById('navBlockTitle').textContent = `Block · ${activeBlock.title}`;
+  goScreen('block'); startBlockTimer(); renderBlockQuestion();
+}
+
+function startMarkedBlock() {
+  startBlockFromIds([...getMarkedQuestionIds()], 'Marked Questions');
+}
+
+
+function toggleNotebookCurrent() {
+  if (!activeBlock || current < 0) return;
+  const qid = activeBlock.qIds[current];
+  if (notebookHas(qid)) notebookItems = notebookItems.filter(n => n.qid !== qid);
+  else notebookItems.unshift({ qid, addedAt: new Date().toISOString() });
+  saveNotebook();
+  renderBlockQuestion();
+  renderDashboard();
+}
+
+function removeNotebook(qid) {
+  notebookItems = notebookItems.filter(n => n.qid !== qid);
+  saveNotebook();
+  renderNotebook();
+  renderDashboard();
+}
+
+function reviewNotebookQuestion(qid) {
+  activeBlock = {
+    qIds: [qid], answers: {}, flagged: {}, struck: {}, highlights: {}, timeSpent: {},
+    expectedSecondsPerQuestion: SECONDS_PER_QUESTION, totalSeconds: SECONDS_PER_QUESTION,
+    remainingSeconds: 0, title: 'Notebook Review', isNew: false, status: 'completed'
+  };
+  current = 0; submitted = true; tutorMode = true;
+  document.getElementById('modeBtn').textContent = `Tutor Mode: ON`;
+  document.getElementById('navBlockTitle').textContent = 'Notebook Review';
+  goScreen('block');
+  renderBlockQuestion();
+}
+
+function renderNotebook() {
+  const wrap = document.getElementById('notebookList');
+  if (!wrap) return;
+  const items = notebookItems.filter(n => questionBank.find(q => q.id === n.qid));
+  if (items.length === 0) {
+    wrap.innerHTML = `<div class="empty-state">No saved concepts yet. Save high-yield explanations from question review.</div>`;
+    return;
+  }
+  wrap.innerHTML = items.map(n => {
+    const q = questionBank.find(qq => qq.id === n.qid);
+    const topic = extractTopic(q);
+    return `<div class="notebook-row">
+      <div>
+        <div class="notebook-title">${q.objective || q.question || q.stem.slice(0,120)}</div>
+        <div class="notebook-sub">${q.subject} · ${q.system} · ${topic}</div>
+      </div>
+      <div class="notebook-actions">
+        <button class="btn btn-primary" onclick="reviewNotebookQuestion('${q.id}')">Review</button>
+        <button class="btn btn-ghost" onclick="removeNotebook('${q.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ===================== PREVIOUS TESTS ===================== */
@@ -2318,6 +2597,10 @@ function renderBlockQuestion() {
           <div class="why-wrong-title">Why the other choices are wrong</div>
           ${q.whyWrong.map(w => `<div class="why-row"><span class="wl">${w.letter}.</span><span>${w.text}</span></div>`).join('')}
         </div>
+        <div class="actions" style="margin-top:18px;">
+          <button class="btn btn-ghost" onclick="openIssueModal()">Report issue</button>
+          <button class="btn btn-ghost" onclick="toggleNotebookCurrent()">${notebookHas(qid) ? 'Remove from notebook' : 'Save to notebook'}</button>
+        </div>
       </div>`;
   }
 
@@ -2388,6 +2671,7 @@ function finishBlock(reason = 'manual') {
     blocksUsed++;
     saveSubscriptionState();
   }
+  recordActivityToday();
 
   document.getElementById('scoreSummary').style.display = 'block';
   document.getElementById('scoreBig').textContent = `${score}/${total}`;
@@ -2411,6 +2695,27 @@ function renderNav() {
   }).join('');
 }
 
+
+
+let issueQuestionId = null;
+function openIssueModal() {
+  if (!activeBlock || current < 0) return;
+  issueQuestionId = activeBlock.qIds[current];
+  const q = questionBank.find(qq => qq.id === issueQuestionId);
+  document.getElementById('issueQuestionMeta').textContent = `Question ID: ${issueQuestionId} · ${q.subject} · ${q.system}`;
+  document.getElementById('issueDetails').value = '';
+  document.getElementById('issueModal').classList.add('show');
+}
+function closeIssueModal() { document.getElementById('issueModal').classList.remove('show'); }
+function sendIssueReport() {
+  const q = questionBank.find(qq => qq.id === issueQuestionId);
+  if (!q) return;
+  const type = document.getElementById('issueType').value;
+  const details = document.getElementById('issueDetails').value.trim();
+  const body = `Issue type: ${type}\nQuestion ID: ${issueQuestionId}\nUser: ${currentUser ? currentUser.email : 'unknown'}\nSubject/System: ${q.subject} · ${q.system}\nCorrect answer: ${q.correct}\n\nStem:\n${q.rawStem || q.stem}\n\nDetails:\n${details || '(no additional details)'}`;
+  window.location.href = `mailto:medchanicmd@gmail.com?subject=${encodeURIComponent('Medchanic question issue: ' + type)}&body=${encodeURIComponent(body)}`;
+  closeIssueModal();
+}
 
 /* ===================== AI TUTOR ===================== */
 function getCurrentQuestionContext() {
@@ -2684,10 +2989,10 @@ function saveZoneHighlights() {
 /* Expose functions to global scope (required for onclick handlers in module scripts) */
 Object.assign(window, {
   goScreen, doLogout, openResetModal, closeResetModal, confirmReset,
-  renderCreateScreen, toggleTag, toggleSelectAll, updateQCount, generateTest,
+  renderCreateScreen, toggleTag, toggleSelectAll, setQuestionStatus, updateQCount, generateTest, startMarkedBlock,
   openTest, reviewTest, resumeTest, goToItem, finishBlock, renderBlockSummary, suspendBlock, exitBlockToDashboard,
-  toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike,
-  applyHighlight, renderTestsList,
+  toggleLabs, toggleFlag, toggleMode, selectChoice, toggleStrike, openIssueModal, closeIssueModal, sendIssueReport, toggleNotebookCurrent, removeNotebook, reviewNotebookQuestion,
+  applyHighlight, renderTestsList, renderNotebook,
   toggleAI, generateAISummary, askAIQuestion, askSuggestedAI,
   closeAdmin, selectCorrect, adminSaveQuestion, adminDeleteQuestion,
   showPaywall, hidePaywall, handleSubscribeClick, applyPromoCode, selectPlan
@@ -3084,6 +3389,7 @@ document.addEventListener('keydown', e => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
