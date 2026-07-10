@@ -258,20 +258,28 @@ function textToHtml(str='') { return `<p>${escapeHtml(str).replace(/\n\n+/g,'</p
 function splitStemLeadIn(rawStem='') {
   const text = String(rawStem || '').trim();
   if (!text) return { stem: '', question: '' };
+
+  // Preferred format: vignette paragraphs, blank line, lead-in question.
+  // Accept ANY final paragraph ending in a question mark as the lead-in. This prevents repeated stems
+  // when lead-ins start with words like "Deficiency", "Mutation", or "Inhibition" instead of "Which".
   const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  const questionStart = /^(which|what|where|when|why|how|the presence|the absence|this patient|this finding|these findings)\b/i;
-  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1]) && questionStart.test(paras[paras.length - 1])) {
+  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1])) {
     return { stem: paras.slice(0, -1).join('\n\n'), question: paras[paras.length - 1] };
   }
-  const matches = [...text.matchAll(/(?:^|\s)((?:Which|What|Where|When|Why|How)\b[^?]+\?)/g)];
+
+  // Fallback for single-paragraph stems: split at the final question sentence.
+  const matches = [...text.matchAll(/(?:^|\s)([^.!?]*\?)/g)];
   if (matches.length) {
     const m = matches[matches.length - 1];
     const q = m[1].trim();
     const idx = m.index + (m[0].startsWith(' ') ? 1 : 0);
-    return { stem: text.slice(0, idx).trim(), question: q };
+    const stemOnly = text.slice(0, idx).trim();
+    return { stem: stemOnly, question: q };
   }
+
   return { stem: text, question: '' };
 }
+
 function looksPlaceholder(v='') {
   return /Question Stem\s*\d+|Objective\s*\d+|Rationale\s*\d+|Explanation\s*[A-E]\b|High Yield question|\.\.\.$|^\.\.\.$/i.test(String(v || '').trim());
 }
