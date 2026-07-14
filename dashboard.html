@@ -1805,7 +1805,7 @@ async function doLogout() {
   try { await _account.deleteSession('current'); } catch (e) {}
   currentUser = null;
   clearLocalUserData();
-  window.location.href = 'index.html';
+  window.location.href = 'login.html';
 }
 
 function splitStemLeadIn(rawStem='') {
@@ -1940,7 +1940,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     const loader = document.getElementById('bootLoader');
     if (loader) loader.querySelector('.boot-sub').textContent = 'Redirecting to login…';
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
   }
 });
 
@@ -3181,7 +3181,7 @@ function hidePaywall() {
 function handleSubscribeClick(plan = selectedPlan) {
   if (!currentUser) {
     alert('Please log in before subscribing.');
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
     return;
   }
   if (!initPaddle()) {

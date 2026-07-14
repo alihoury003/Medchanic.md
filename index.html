@@ -3,116 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medchanic.md — Log in</title>
+  <title>Medchanic.md — Step 1 QBank</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .landing { min-height:100vh; background:var(--paper); }
+    .landing-nav { display:flex; justify-content:space-between; align-items:center; max-width:1120px; margin:0 auto; padding:22px 28px; }
+    .landing-brand { display:flex; gap:8px; align-items:center; font-family:var(--mono); font-weight:700; color:var(--ink); text-decoration:none; }
+    .landing-brand .mark { color:var(--clinical-blue); }
+    .landing-links { display:flex; gap:16px; align-items:center; font-size:14px; }
+    .landing-links a { color:var(--ink-soft); text-decoration:none; }
+    .landing-links a:hover { color:var(--clinical-blue); }
+    .nav-cta { background:var(--ink); color:var(--paper)!important; padding:9px 14px; border-radius:5px; font-weight:700; }
+    .hero { max-width:1120px; margin:0 auto; padding:72px 28px 60px; display:grid; grid-template-columns:1.05fr .95fr; gap:48px; align-items:center; }
+    .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--clinical-blue); font-weight:700; margin-bottom:16px; }
+    .hero h1 { font-family:var(--serif); font-size:56px; line-height:1.02; letter-spacing:-1px; margin-bottom:18px; }
+    .hero p { font-family:var(--serif); font-size:18px; line-height:1.7; color:var(--ink-soft); margin-bottom:28px; }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; }
+    .btn-dark { background:var(--ink); color:var(--paper); text-decoration:none; padding:13px 18px; border-radius:6px; font-weight:700; }
+    .btn-light { background:var(--panel); color:var(--ink); border:1px solid var(--line); text-decoration:none; padding:13px 18px; border-radius:6px; font-weight:700; }
+    .mock { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:0 20px 60px rgba(26,29,35,.08); }
+    .mock-top { display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-bottom:18px; }
+    .mock-stem { font-family:var(--serif); line-height:1.55; font-size:16px; margin-bottom:16px; }
+    .mock-choice { border:1px solid var(--line); border-radius:6px; padding:11px 12px; margin:8px 0; font-size:14px; background:var(--paper); }
+    .mock-choice.good { border-color:var(--correct); background:var(--correct-soft); }
+    .features { max-width:1120px; margin:0 auto; padding:24px 28px 70px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .feature { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px; }
+    .feature h3 { margin-bottom:8px; font-size:16px; }
+    .feature p { color:var(--ink-soft); line-height:1.55; font-size:14px; }
+    .pricing-strip { background:var(--ink); color:var(--paper); padding:34px 28px; text-align:center; }
+    .pricing-strip h2 { font-family:var(--serif); font-size:26px; margin-bottom:8px; }
+    .pricing-strip p { color:#C9C7BD; margin-bottom:18px; }
+    .legal-note { max-width:900px; margin:0 auto; padding:30px 28px 60px; text-align:center; color:var(--ink-soft); font-size:13px; line-height:1.6; }
+    @media(max-width:850px){ .hero{grid-template-columns:1fr; padding-top:40px;} .hero h1{font-size:38px;} .features{grid-template-columns:1fr;} .landing-nav{align-items:flex-start; gap:12px;} .landing-links{flex-wrap:wrap; justify-content:flex-end;} }
+  </style>
 </head>
 <body>
-<div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <span class="mark">⚙</span>
-      <span class="name">MEDCHANIC.MD</span>
+<div class="landing">
+  <nav class="landing-nav">
+    <a class="landing-brand" href="index.html"><span class="mark">⚙</span>MEDCHANIC.MD</a>
+    <div class="landing-links">
+      <a href="pricing.html">Pricing</a>
+      <a href="login.html">Log in</a>
+      <a class="nav-cta" href="signup.html">Start free</a>
     </div>
-    <div class="auth-sub">Diagnostic reasoning, tuned daily.</div>
+  </nav>
 
-    <div class="form-banner" id="banner"></div>
-
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="email" placeholder="you@school.edu" autocomplete="email">
-      <div class="field-error" id="emailError"></div>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Step 1 QBank · Early Access</div>
+      <h1>Fix how you think for Step 1.</h1>
+      <p>Medchanic.md is a mechanism-first QBank with exam-style blocks, detailed explanations, wrong-answer breakdowns, performance analytics, marked questions, and a high-yield notebook.</p>
+      <div class="hero-actions">
+        <a class="btn-dark" href="signup.html">Create free account</a>
+        <a class="btn-light" href="pricing.html">View pricing</a>
+      </div>
     </div>
 
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
-      <div class="field-error" id="passwordError"></div>
+    <div class="mock" aria-label="Medchanic question preview">
+      <div class="mock-top"><span>ITEM 1 · PHARMACOLOGY</span><span>TUTOR MODE</span></div>
+      <div class="mock-stem">A patient develops a dry cough after starting an antihypertensive. Which mechanism best explains the adverse effect?</div>
+      <div class="mock-choice">A. Reduced aldosterone</div>
+      <div class="mock-choice good">B. Bradykinin accumulation</div>
+      <div class="mock-choice">C. Decreased efferent tone</div>
+      <div class="mock-choice">D. Prostaglandin synthesis</div>
     </div>
+  </section>
 
-    <button class="btn-primary" id="loginBtn" onclick="handleLogin()">Log in</button>
+  <section class="features">
+    <div class="feature"><h3>Real practice blocks</h3><p>Create custom blocks by subject, system, question status, and number of questions.</p></div>
+    <div class="feature"><h3>Explanations that teach</h3><p>Review the correct mechanism and why every wrong answer is wrong.</p></div>
+    <div class="feature"><h3>Track weak spots</h3><p>See performance by subject, system, and topic so you know what to fix next.</p></div>
+  </section>
 
-    <div class="auth-foot" style="margin-top:14px;">
-      <a href="forgot-password.html">Forgot password?</a>
-    </div>
-    <div class="auth-foot">
-      No account? <a href="signup.html">Sign up free</a>
-    </div>
-    <div class="auth-foot" style="font-size:12px; margin-top:12px;">
-      <a href="pricing.html">Pricing</a> ·
-      <a href="terms.html">Terms</a> ·
-      <a href="privacy.html">Privacy</a> ·
-      <a href="refund-policy.html">Refund Policy</a>
-    </div>
+  <section class="pricing-strip">
+    <h2>Early access is open.</h2>
+    <p>Try free blocks, then unlock unlimited access when ready.</p>
+    <a class="btn-dark" style="background:var(--paper);color:var(--ink);" href="pricing.html">See plans</a>
+  </section>
+
+  <div class="legal-note">
+    Medchanic.md is an independent educational exam-preparation resource. It does not provide medical advice, diagnosis, treatment, or patient care services. Medchanic.md is not affiliated with NBME, USMLE, FSMB, UWorld, or AMBOSS.
+    <br><br>
+    <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund-policy.html">Refund Policy</a> · <a href="mailto:medchanicmd@gmail.com">Contact</a>
   </div>
 </div>
-
-<script type="module">
-  import { Client, Account } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
-
-  const client = new Client()
-    .setEndpoint("https://nyc.cloud.appwrite.io/v1")
-    .setProject("6a427cd000140ae72eb1");
-  const account = new Account(client);
-
-  // Always kill any stale session on the login page
-  // so users never get auto-redirected unexpectedly
-  try { await account.deleteSession("current"); } catch (e) { /* no session, fine */ }
-
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  function showBanner(msg, type) {
-    const el = document.getElementById("banner");
-    el.textContent = msg;
-    el.className = "form-banner show " + type;
-  }
-
-  function fieldError(inputId, errorId, msg) {
-    document.getElementById(inputId).classList.add("invalid");
-    const el = document.getElementById(errorId);
-    el.textContent = msg;
-    el.classList.add("show");
-  }
-
-  function clearErrors() {
-    document.querySelectorAll(".field-error").forEach(e => e.classList.remove("show"));
-    document.querySelectorAll(".field input").forEach(e => e.classList.remove("invalid"));
-    const b = document.getElementById("banner");
-    b.className = "form-banner";
-    b.textContent = "";
-  }
-
-  window.handleLogin = async function() {
-    clearErrors();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    const btn = document.getElementById("loginBtn");
-
-    let hasError = false;
-    if (!EMAIL_RE.test(email)) { fieldError("email", "emailError", "Enter a valid email address."); hasError = true; }
-    if (!password) { fieldError("password", "passwordError", "Enter your password."); hasError = true; }
-    if (hasError) return;
-
-    btn.disabled = true;
-    btn.textContent = "Logging in…";
-
-    try {
-      await account.createEmailPasswordSession(email, password);
-      window.location.href = "dashboard.html";
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = "Log in";
-      if (err.code === 401) {
-        showBanner("Incorrect email or password. Try again.", "error");
-      } else if (err.code === 404) {
-        showBanner("No account found with that email. Try signing up.", "error");
-      } else {
-        showBanner("Something went wrong. Please try again.", "error");
-        console.error(err);
-      }
-    }
-  };
-
-  document.addEventListener("keydown", e => { if (e.key === "Enter") window.handleLogin(); });
-</script>
 </body>
 </html>
