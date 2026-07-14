@@ -760,6 +760,8 @@
   .plan-duration { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
   .plan-price { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--ink); }
   .plan-price span { font-size: 13px; font-weight: 400; color: var(--ink-faint); }
+  .plan-price.loading { color: var(--ink-faint); font-size: 18px; }
+  .plan.selected { border-color: var(--clinical-blue); box-shadow: 0 0 0 2px rgba(43,108,176,0.18); background: rgba(43,108,176,0.035); }
   .plan-note { font-family: var(--sans); font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; }
   .paywall-cta {
     width: 100%; padding: 13px; background: var(--clinical-blue); color: white;
@@ -1032,7 +1034,7 @@
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
-      <a href="/cdn-cgi/l/email-protection#cea3abaaada6afa0a7ada3aa8ea9a3afa7a2e0ada1a3" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
+      <a href="mailto:medchanicmd@gmail.com" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
   </div>
@@ -1527,7 +1529,8 @@
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script type="module">
 import { Client, Account, Databases, ID, Query, Functions } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
 /* ===================== QUESTION BANK ===================== */
@@ -3047,16 +3050,20 @@ Object.assign(window, {
 const FREE_BLOCK_LIMIT = 2;
 const ADMIN_EMAIL = 'medchanicmd@gmail.com';
 
-// Stripe test-mode Payment Links. Replace these with live-mode links before public launch.
-const STRIPE_LINKS = {
-  monthly:   'https://buy.stripe.com/test_14AfZhaqN6REgbQ84rfEk00',
-  quarterly: 'https://buy.stripe.com/test_fZu9ATeH37VI0cSfwTfEk01',
-  annual:    'https://buy.stripe.com/test_3cI3cv56t2Bo6BggAXfEk02'
+// Paddle live client-side token. This is not a secret API key; it is intended for frontend Paddle.js.
+const PADDLE_CLIENT_TOKEN = 'live_61c415361a7b2cf950057b8d5f6';
+
+// Paddle live price IDs
+const PADDLE_PRICES = {
+  monthly:   'pri_01kxgfap9cs231vrkcyhcd055t',
+  quarterly: 'pri_01kxgfe4kvnx3jh70fd9xzkybw',
+  annual:    'pri_01kxgfj20d6k3527bb1qtht0fk'
 };
 
 let selectedPlan = 'quarterly';
 let isSubscribed = false;
 let blocksUsed = 0;
+let paddleReady = false;
 
 function selectPlan(plan) {
   selectedPlan = plan;
@@ -3092,9 +3099,77 @@ async function saveSubscriptionState() {
   } catch (err) {}
 }
 
+function initPaddle() {
+  if (paddleReady) return true;
+  if (!window.Paddle) {
+    console.error('Paddle.js not loaded yet.');
+    return false;
+  }
+  if (!PADDLE_CLIENT_TOKEN || !PADDLE_CLIENT_TOKEN.startsWith('live_')) {
+    console.error('Missing/invalid Paddle live client-side token.');
+    return false;
+  }
+  // Live environment is default. Do not call Paddle.Environment.set('sandbox') with live price IDs.
+  Paddle.Initialize({
+    token: PADDLE_CLIENT_TOKEN,
+    checkout: {
+      settings: {
+        displayMode: 'overlay',
+        variant: 'one-page',
+        theme: 'light',
+        successUrl: `${window.location.origin}/dashboard.html?payment=success`
+      }
+    },
+    eventCallback: function(data) {
+      if (data && data.name === 'checkout.completed') {
+        console.log('Paddle checkout completed:', data);
+        // Access should be unlocked by webhook/Appwrite Function, not only by frontend callback.
+        alert('Payment completed. Your access will activate once payment confirmation is processed. If it does not unlock shortly, refresh once or contact support.');
+      }
+    }
+  });
+  paddleReady = true;
+  return true;
+}
+
+async function loadPaddlePrices() {
+  if (!initPaddle()) return;
+  const ids = [PADDLE_PRICES.monthly, PADDLE_PRICES.quarterly, PADDLE_PRICES.annual];
+  try {
+    const result = await Paddle.PricePreview({
+      items: ids.map(priceId => ({ priceId, quantity: 1 }))
+    });
+    const lineItems = result?.data?.details?.lineItems || [];
+    const byPrice = {};
+    lineItems.forEach(item => {
+      const priceId = item.price?.id || item.priceId || item.price_id;
+      if (priceId) byPrice[priceId] = item;
+    });
+    const setPrice = (plan, elId, fallback) => {
+      const item = byPrice[PADDLE_PRICES[plan]];
+      const formatted = item?.formattedTotals?.total || item?.formattedTotals?.subtotal || fallback;
+      const el = document.getElementById(elId);
+      if (el) { el.classList.remove('loading'); el.innerHTML = formatted; }
+    };
+    setPrice('monthly', 'paddlePriceMonthly', '$29');
+    setPrice('quarterly', 'paddlePriceQuarterly', '$69');
+    setPrice('annual', 'paddlePriceAnnual', '$199');
+  } catch (err) {
+    console.warn('Could not load localized Paddle prices; using fallback display.', err);
+    const fallback = { paddlePriceMonthly: '$29', paddlePriceQuarterly: '$69', paddlePriceAnnual: '$199' };
+    Object.entries(fallback).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('loading'); el.textContent = value; }
+    });
+  }
+}
+
 function showPaywall() {
   document.getElementById('paywallOverlay').classList.add('show');
-  setTimeout(() => selectPlan(selectedPlan || 'quarterly'), 0);
+  setTimeout(() => {
+    selectPlan(selectedPlan || 'quarterly');
+    loadPaddlePrices();
+  }, 0);
 }
 
 function hidePaywall() {
@@ -3103,33 +3178,40 @@ function hidePaywall() {
   if (msg) { msg.className = 'promo-msg'; msg.textContent = ''; }
 }
 
-function buildStripeUrl(plan) {
-  const base = STRIPE_LINKS[plan];
-  if (!base) throw new Error('Missing Stripe payment link for plan: ' + plan);
-  const url = new URL(base);
-
-  // Tie payment to the logged-in Appwrite user for webhook fulfillment.
-  if (currentUser && currentUser.$id) url.searchParams.set('client_reference_id', currentUser.$id);
-  if (currentUser && currentUser.email) url.searchParams.set('locked_prefilled_email', currentUser.email);
-
-  // Optional Stripe promotion code. This only works after you create Stripe promotion codes
-  // and enable "Allow promotion codes" on each Payment Link.
-  const promo = document.getElementById('promoInput')?.value.trim();
-  if (promo) url.searchParams.set('prefilled_promo_code', promo.toUpperCase());
-
-  url.searchParams.set('utm_source', 'medchanic_app');
-  url.searchParams.set('utm_medium', 'paywall');
-  url.searchParams.set('utm_campaign', plan);
-  return url.toString();
-}
-
 function handleSubscribeClick(plan = selectedPlan) {
   if (!currentUser) {
     alert('Please log in before subscribing.');
     window.location.href = 'index.html';
     return;
   }
-  window.location.href = buildStripeUrl(plan);
+  if (!initPaddle()) {
+    alert('Checkout is still loading. Please try again in a moment.');
+    return;
+  }
+  const priceId = PADDLE_PRICES[plan];
+  if (!priceId) {
+    alert('Missing Paddle price for selected plan.');
+    return;
+  }
+  const promo = document.getElementById('promoInput')?.value.trim().toUpperCase();
+
+  Paddle.Checkout.open({
+    settings: {
+      displayMode: 'overlay',
+      variant: 'one-page',
+      theme: 'light',
+      successUrl: `${window.location.origin}/dashboard.html?payment=success&plan=${encodeURIComponent(plan)}`
+    },
+    items: [{ priceId, quantity: 1 }],
+    customer: currentUser?.email ? { email: currentUser.email } : undefined,
+    customData: {
+      appwriteUserId: currentUser.$id,
+      userEmail: currentUser.email,
+      plan,
+      source: 'medchanic_paywall'
+    },
+    ...(promo ? { discountCode: promo } : {})
+  });
 }
 
 function applyPromoCode() {
@@ -3142,14 +3224,14 @@ function applyPromoCode() {
     return;
   }
 
-  msgEl.textContent = '✓ Code added. Choose a plan and continue to Stripe.';
+  msgEl.textContent = '✓ Code added. Choose a plan and continue to Paddle checkout.';
   msgEl.className = 'promo-msg show success';
 }
 
 function handlePaymentReturnNotice() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('payment') === 'success') {
-    alert('Payment completed. If access does not unlock immediately, refresh once. Automatic activation requires the Stripe webhook to be connected.');
+    alert('Payment completed. If access does not unlock immediately, refresh once. Automatic activation requires the Paddle webhook to be connected.');
     window.history.replaceState({}, document.title, window.location.pathname);
   }
   if (params.get('payment') === 'cancelled') {
@@ -3315,18 +3397,18 @@ document.addEventListener('keydown', e => {
     <div class="plans">
       <div class="plan" data-plan="monthly" onclick="selectPlan('monthly')">
         <div class="plan-duration">Monthly</div>
-        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-price loading" id="paddlePriceMonthly">Loading…</div>
         <div class="plan-note">Billed monthly</div>
       </div>
       <div class="plan popular selected" data-plan="quarterly" onclick="selectPlan('quarterly')">
         <div class="popular-tag">Most popular</div>
         <div class="plan-duration">3 Months</div>
-        <div class="plan-price">$69<span>/3 mo</span></div>
+        <div class="plan-price loading" id="paddlePriceQuarterly">Loading…</div>
         <div class="plan-note">$23/month — save 21%</div>
       </div>
       <div class="plan" data-plan="annual" onclick="selectPlan('annual')">
         <div class="plan-duration">Annual</div>
-        <div class="plan-price">$199<span>/yr</span></div>
+        <div class="plan-price loading" id="paddlePriceAnnual">Loading…</div>
         <div class="plan-note">$16.6/month — best value</div>
       </div>
       <div class="plan">
@@ -3344,7 +3426,7 @@ document.addEventListener('keydown', e => {
     <div class="promo-msg" id="promoMsg"></div>
 
     <div class="paywall-foot" style="margin-top:16px;">
-      Questions? <a href="/cdn-cgi/l/email-protection#eb868e8f88838a858288868fab8c868a8287c5888486">Contact us</a> ·
+      Questions? <a href="mailto:medchanicmd@gmail.com">Contact us</a> ·
       <a href="terms.html" target="_blank">Terms</a> ·
       <a href="privacy.html" target="_blank">Privacy</a>
     </div>
@@ -3433,6 +3515,5 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
