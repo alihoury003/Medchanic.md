@@ -3,188 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medchanic.MD — Dashboard</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/questions.js"></script>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232b5be7'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E">
+  <title>Medchanic.md — Step 1 QBank</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .landing { min-height:100vh; background:var(--paper); }
+    .landing-nav { display:flex; justify-content:space-between; align-items:center; max-width:1120px; margin:0 auto; padding:22px 28px; }
+    .landing-brand { display:flex; gap:8px; align-items:center; font-family:var(--mono); font-weight:700; color:var(--ink); text-decoration:none; }
+    .landing-brand .mark { color:var(--clinical-blue); }
+    .landing-links { display:flex; gap:16px; align-items:center; font-size:14px; }
+    .landing-links a { color:var(--ink-soft); text-decoration:none; }
+    .landing-links a:hover { color:var(--clinical-blue); }
+    .nav-cta { background:var(--ink); color:var(--paper)!important; padding:9px 14px; border-radius:5px; font-weight:700; }
+    .hero { max-width:1120px; margin:0 auto; padding:72px 28px 60px; display:grid; grid-template-columns:1.05fr .95fr; gap:48px; align-items:center; }
+    .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--clinical-blue); font-weight:700; margin-bottom:16px; }
+    .hero h1 { font-family:var(--serif); font-size:56px; line-height:1.02; letter-spacing:-1px; margin-bottom:18px; }
+    .hero p { font-family:var(--serif); font-size:18px; line-height:1.7; color:var(--ink-soft); margin-bottom:28px; }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; }
+    .btn-dark { background:var(--ink); color:var(--paper); text-decoration:none; padding:13px 18px; border-radius:6px; font-weight:700; }
+    .btn-light { background:var(--panel); color:var(--ink); border:1px solid var(--line); text-decoration:none; padding:13px 18px; border-radius:6px; font-weight:700; }
+    .mock { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:0 20px 60px rgba(26,29,35,.08); }
+    .mock-top { display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-bottom:18px; }
+    .mock-stem { font-family:var(--serif); line-height:1.55; font-size:16px; margin-bottom:16px; }
+    .mock-choice { border:1px solid var(--line); border-radius:6px; padding:11px 12px; margin:8px 0; font-size:14px; background:var(--paper); }
+    .mock-choice.good { border-color:var(--correct); background:var(--correct-soft); }
+    .features { max-width:1120px; margin:0 auto; padding:24px 28px 70px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .feature { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px; }
+    .feature h3 { margin-bottom:8px; font-size:16px; }
+    .feature p { color:var(--ink-soft); line-height:1.55; font-size:14px; }
+    .pricing-strip { background:var(--ink); color:var(--paper); padding:34px 28px; text-align:center; }
+    .pricing-strip h2 { font-family:var(--serif); font-size:26px; margin-bottom:8px; }
+    .pricing-strip p { color:#C9C7BD; margin-bottom:18px; }
+    .legal-note { max-width:900px; margin:0 auto; padding:30px 28px 60px; text-align:center; color:var(--ink-soft); font-size:13px; line-height:1.6; }
+    @media(max-width:850px){ .hero{grid-template-columns:1fr; padding-top:40px;} .hero h1{font-size:38px;} .features{grid-template-columns:1fr;} .landing-nav{align-items:flex-start; gap:12px;} .landing-links{flex-wrap:wrap; justify-content:flex-end;} }
+  </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="index.html" class="navbar-brand">
-        <div class="brand-mark">M</div>
-        <span>Medchanic.<span class="brand-accent">MD</span></span>
-      </a>
-      <div class="navbar-links">
-        <a href="index.html" class="active">Dashboard</a>
-        <a href="create-test.html">Create Test</a>
-        <a href="flashcards.html">Flashcards</a>
-        <a href="review.html">Review</a>
-      </div>
-      <div class="navbar-user">
-        <span style="font-size:0.8125rem;color:var(--text-secondary)" id="userNameDisplay">User</span>
-        <div class="user-avatar" id="userAvatar">U</div>
-        <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Sign out</button>
-      </div>
+<div class="landing">
+  <nav class="landing-nav">
+    <a class="landing-brand" href="index.html"><span class="mark">⚙</span>MEDCHANIC.MD</a>
+    <div class="landing-links">
+      <a href="pricing.html">Pricing</a>
+      <a href="login.html">Log in</a>
+      <a class="nav-cta" href="signup.html">Start free</a>
     </div>
   </nav>
 
-  <!-- Dashboard -->
-  <div class="dashboard">
-    <div class="welcome-section">
-      <h1>Good to see you, <span id="userName">User</span>.</h1>
-      <p>Continue your USMLE Step 1 preparation.</p>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="overallScore">--</div>
-        <div class="stat-label">Overall Score</div>
-        <div class="stat-sub">Average accuracy</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="correctCount" style="color:var(--accent-green)">0</div>
-        <div class="stat-label">Correct</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="wrongCount" style="color:var(--accent-red)">0</div>
-        <div class="stat-label">Incorrect</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="omittedCount" style="color:var(--text-muted)">0</div>
-        <div class="stat-label">Omitted</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="qbankUsed">0%</div>
-        <div class="stat-label">Qbank Used</div>
-        <div class="stat-sub" id="qbankDetail">0 of 200 questions</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="testCount">0</div>
-        <div class="stat-label">Tests Taken</div>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Step 1 QBank · Early Access</div>
+      <h1>Fix how you think for Step 1.</h1>
+      <p>Medchanic.md is a mechanism-first QBank with exam-style blocks, detailed explanations, wrong-answer breakdowns, performance analytics, marked questions, and a high-yield notebook.</p>
+      <div class="hero-actions">
+        <a class="btn-dark" href="signup.html">Create free account</a>
+        <a class="btn-light" href="pricing.html">View pricing</a>
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <h2 style="font-size:1rem;font-weight:600;margin-bottom:16px;">Quick Start</h2>
-    <div class="quick-actions">
-      <a href="create-test.html" class="action-card">
-        <div class="action-icon" style="background:var(--accent-blue-light);color:var(--accent-blue);">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
-        </div>
-        <h3>New Custom Test</h3>
-        <p>Configure by subject, body system, and question count.</p>
-      </a>
-      <a href="create-test.html?quick=40" class="action-card">
-        <div class="action-icon" style="background:var(--accent-green-light);color:var(--accent-green);">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 7v3l2 2"/></svg>
-        </div>
-        <h3>Timed 40-Question Block</h3>
-        <p>Randomized across all subjects. Standard exam pace.</p>
-      </a>
-      <a href="create-test.html?quick=tutor" class="action-card">
-        <div class="action-icon" style="background:var(--accent-purple-light);color:var(--accent-purple);">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16l4-4M4 16v-6M4 16h6"/><path d="M16 4l-4 4M16 4v6M16 4h-6"/></svg>
-        </div>
-        <h3>Tutor Mode</h3>
-        <p>Learn with instant feedback after each question.</p>
-      </a>
-      <a href="review.html" class="action-card">
-        <div class="action-icon" style="background:var(--accent-amber-light);color:var(--accent-amber);">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10a7 7 0 1114 0 7 7 0 01-14 0"/><path d="M10 6v4l2.5 1.5"/></svg>
-        </div>
-        <h3>Review Past Tests</h3>
-        <p>Analyze performance and review missed questions.</p>
-      </a>
-      <a href="flashcards.html" class="action-card">
-        <div class="action-icon" style="background:#eef2ff;color:var(--accent-blue);">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M7 8h6M7 12h4"/></svg>
-        </div>
-        <h3>Anki Flashcards</h3>
-        <p>Master high-yield concepts with spaced repetition.</p>
-      </a>
+    <div class="mock" aria-label="Medchanic question preview">
+      <div class="mock-top"><span>ITEM 1 · PHARMACOLOGY</span><span>TUTOR MODE</span></div>
+      <div class="mock-stem">A patient develops a dry cough after starting an antihypertensive. Which mechanism best explains the adverse effect?</div>
+      <div class="mock-choice">A. Reduced aldosterone</div>
+      <div class="mock-choice good">B. Bradykinin accumulation</div>
+      <div class="mock-choice">C. Decreased efferent tone</div>
+      <div class="mock-choice">D. Prostaglandin synthesis</div>
     </div>
+  </section>
 
-    <!-- Subject Performance -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Performance by Subject</div>
-      </div>
-      <div id="subjectPerformance">
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-          </div>
-          <h3>No data yet</h3>
-          <p>Complete your first practice test to see your performance breakdown by subject.</p>
-          <a href="create-test.html" class="btn btn-primary">Create Your First Test</a>
-        </div>
-      </div>
-    </div>
+  <section class="features">
+    <div class="feature"><h3>Real practice blocks</h3><p>Create custom blocks by subject, system, question status, and number of questions.</p></div>
+    <div class="feature"><h3>Explanations that teach</h3><p>Review the correct mechanism and why every wrong answer is wrong.</p></div>
+    <div class="feature"><h3>Track weak spots</h3><p>See performance by subject, system, and topic so you know what to fix next.</p></div>
+  </section>
+
+  <section class="pricing-strip">
+    <h2>Early access is open.</h2>
+    <p>Try free blocks, then unlock unlimited access when ready.</p>
+    <a class="btn-dark" style="background:var(--paper);color:var(--ink);" href="pricing.html">See plans</a>
+  </section>
+
+  <div class="legal-note">
+    Medchanic.md is an independent educational exam-preparation resource. It does not provide medical advice, diagnosis, treatment, or patient care services. Medchanic.md is not affiliated with NBME, USMLE, FSMB, UWorld, or AMBOSS.
+    <br><br>
+    <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund-policy.html">Refund Policy</a> · <a href="mailto:medchanicmd@gmail.com">Contact</a>
   </div>
-
-  <script>
-    var user = JSON.parse(localStorage.getItem('medchanic_user') || 'null');
-    if (!user || !user.isLoggedIn) window.location.href = 'login.html';
-    document.getElementById('userName').textContent = user.name || 'User';
-    document.getElementById('userNameDisplay').textContent = user.name || 'User';
-    document.getElementById('userAvatar').textContent = (user.name || 'U')[0].toUpperCase();
-    function handleLogout() { localStorage.removeItem('medchanic_user'); window.location.href = 'login.html'; }
-
-    function loadDashboard() {
-      var history = JSON.parse(localStorage.getItem('medchanic_testHistory') || '[]');
-      var totalQ = QuestionBank.getCount();
-      var correct = 0, wrong = 0, total = 0;
-      var uniqueSeen = {};
-      history.forEach(function(t) {
-        (t.questions || []).forEach(function(q) {
-          if (q.selectedAnswer !== undefined && q.selectedAnswer !== null && q.selectedAnswer !== -1) {
-            total++; uniqueSeen[q.id] = true;
-            if (q.isCorrect) correct++; else wrong++;
-          }
-        });
-      });
-      var score = total > 0 ? Math.round((correct / (correct + wrong)) * 100) : 0;
-      var used = Math.round((Object.keys(uniqueSeen).length / totalQ) * 100);
-      document.getElementById('overallScore').textContent = total > 0 ? score + '%' : '--';
-      document.getElementById('correctCount').textContent = correct;
-      document.getElementById('wrongCount').textContent = wrong;
-      document.getElementById('omittedCount').textContent = 0;
-      document.getElementById('qbankUsed').textContent = used + '%';
-      document.getElementById('qbankDetail').textContent = Object.keys(uniqueSeen).length + ' of ' + totalQ + ' questions';
-      document.getElementById('testCount').textContent = history.length;
-
-      var subjData = {};
-      history.forEach(function(t) {
-        (t.questions || []).forEach(function(q) {
-          if (q.selectedAnswer !== undefined && q.selectedAnswer !== null && q.selectedAnswer !== -1) {
-            var s = q.subject || 'Unknown';
-            if (!subjData[s]) subjData[s] = { correct: 0, total: 0 };
-            subjData[s].total++;
-            if (q.isCorrect) subjData[s].correct++;
-          }
-        });
-      });
-
-      var container = document.getElementById('subjectPerformance');
-      var subjects = Object.keys(subjData);
-      if (subjects.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><h3>No data yet</h3><p>Complete your first practice test to see your performance by subject.</p><a href="create-test.html" class="btn btn-primary">Create Your First Test</a></div>';
-        return;
-      }
-      var html = '<div style="display:flex;flex-direction:column;gap:14px;">';
-      QuestionBank.getSubjects().forEach(function(subj) {
-        var d = subjData[subj] || { correct: 0, total: 0 };
-        var pct = d.total > 0 ? Math.round((d.correct / d.total) * 100) : 0;
-        var barColor = pct >= 70 ? 'var(--accent-green)' : pct >= 50 ? 'var(--accent-amber)' : 'var(--accent-red)';
-        html += '<div><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:0.875rem;font-weight:500;">' + subj + '</span><span style="font-size:0.8125rem;color:var(--text-secondary);">' + d.correct + '/' + d.total + ' (' + pct + '%)</span></div><div class="perf-bar-track"><div class="perf-bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div></div>';
-      });
-      html += '</div>';
-      container.innerHTML = html;
-    }
-    loadDashboard();
-  </script>
+</div>
 </body>
 </html>
