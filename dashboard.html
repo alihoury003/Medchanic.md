@@ -1016,6 +1016,21 @@
   }
   .admin-qrow-del:hover { color: var(--incorrect); }
 </style>
+
+<style>
+        .flashcard-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .card-box { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; min-height: 280px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s; }
+        .card-box:hover { border-color: var(--accent-blue); }
+        .card-content { font-size: 1.2rem; color: var(--text-main); line-height: 1.6; text-align: center; margin: auto 0; }
+        .card-hint { font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin-top: 20px; }
+        .rating-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
+        .rate-btn { padding: 12px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; color: white; transition: opacity 0.2s; }
+        .rate-again { background: #e53e3e; }
+        .rate-good { background: #3182ce; }
+        .rate-easy { background: #38a169; }
+        .rate-btn:hover { opacity: 0.9; }
+        .deck-stats { display: flex; justify-content: space-between; background: white; border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 0.95rem; }
+    </style>
 </head>
 <body>
 
@@ -1139,7 +1154,7 @@
         <div class="ac-title">Review Previous Tests</div>
         <div class="ac-sub">Revisit past blocks and explanations</div>
       </div>
-      <div class="action-card" onclick="window.location.href='flashcards.html'">
+      <div class="action-card" onclick="goScreen('flashcards')">
         <div class="ac-icon">✦</div>
         <div class="ac-title">Anki Flashcards</div>
         <div class="ac-sub">Spaced repetition review by subject</div>
@@ -1227,6 +1242,57 @@
     <div class="create-title" style="margin-bottom:24px;">Previous tests</div>
     <div id="testsList"></div>
   </div>
+</div>
+
+
+<!-- ===================== FLASHCARDS ===================== -->
+<div class="screen" id="screen-flashcards">
+  <div class="app-topbar">
+    <div class="brand" onclick="goScreen('dashboard')"><span class="mark">⚙</span>MEDCHANIC.MD</div>
+    <div class="app-nav">
+      <button data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
+      <button data-nav="create" onclick="goScreen('create')">Create Test</button>
+      <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+      <button class="active" data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
+    </div>
+    <div class="user-pill" onclick="doLogout()">Log out</div>
+  </div>
+  <main class="flashcard-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="font-size: 1.8rem; font-weight: 700;">Gastroenterology & Nutrition Flashcards</h1>
+            <span id="deck-tag" style="background: #eef2ff; color: var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;">Anki SM-2 Engine</span>
+        </div>
+
+        <div class="deck-stats">
+            <div>Due Today: <strong id="due-count">0</strong></div>
+            <div>Reviewed Today: <strong id="reviewed-count">0</strong></div>
+            <div>Total Deck Cards: <strong id="total-count">0</strong></div>
+        </div>
+
+        <div id="study-area">
+            <div class="card-box" id="card-box" onclick="toggleCard()">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+                    <span id="card-topic">Topic</span>
+                    <span id="card-side-indicator">Question</span>
+                </div>
+                <div class="card-content" id="card-text">Loading flashcards...</div>
+                <div class="card-hint" id="card-hint">Click card or press Space to reveal answer</div>
+            </div>
+
+            <div class="rating-buttons" id="rating-buttons" style="display: none;">
+                <button class="rate-btn rate-again" onclick="rateCard('again')">Again (&lt;1m)</button>
+                <button class="rate-btn rate-good" onclick="rateCard('good')">Good (6d)</button>
+                <button class="rate-btn rate-easy" onclick="rateCard('easy')">Easy (10d)</button>
+            </div>
+        </div>
+
+        <div id="finished-area" style="display: none; text-align: center; background: white; border: 1px solid var(--border-color); padding: 50px; border-radius: 12px; margin-top: 20px;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 10px;">Congratulations!</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">You have completed all due flashcards for this session.</p>
+            <a href="dashboard.html" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: var(--accent-blue); color: white; border-radius: 6px; font-weight: 600;">Return to Dashboard</a>
+        </div>
+    </main>
 </div>
 
 <!-- ===================== NOTEBOOK ===================== -->
@@ -1755,6 +1821,7 @@ function goScreen(name) {
   if (name === 'create') renderCreateScreen();
   if (name === 'tests') renderTestsList();
   if (name === 'notebook') renderNotebook();
+  if (name === 'flashcards') initDeck();
 }
 
 /* ===================== APPWRITE AUTH + DATABASE ===================== */
@@ -3522,6 +3589,97 @@ document.addEventListener('keydown', e => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef219f90c708d',t:'MTc4NjAyODc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26f2c0c3f81e30f',t:'MTc4NjAzMTE2Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef219f90c708d',t:'MTc4NjAyODc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script src="js/anki-engine.js"></script>
+<script>
+        const FLASHCARD_DECK = [
+            { id: 1, topic: 'Diverticular Bleeding', q: 'What is the underlying anatomical mechanism of painless massive lower GI bleeding in diverticulosis?', a: 'Rupture of vasa recta vessels traversing the muscular wall within false diverticula, most commonly in the sigmoid colon.' },
+            { id: 2, topic: 'Barrett Esophagus', q: 'What histological epithelial metaplasia characterizes Barrett esophagus?', a: 'Metaplasia of nonkeratinizing stratified squamous epithelium into nonciliated simple columnar epithelium with goblet cells.' },
+            { id: 3, topic: 'Crohn Disease', q: 'What are the classic endoscopic and histological hallmarks of Crohn disease?', a: 'Skip lesions, cobblestone mucosa, deep linear ulcerations, transmural inflammation, and non-caseating granulomas.' },
+            { id: 4, topic: 'Achalasia', q: 'What is the underlying neurological pathology causing achalasia?', a: 'Autoimmune degeneration of ganglion cells in the myenteric (Auerbach) plexus, leading to aperistalsis and incomplete LES relaxation.' },
+            { id: 5, topic: 'Celiac Disease', q: 'What duodenal biopsy findings characterize celiac disease?', a: 'Villous atrophy/blunting, crypt hyperplasia, and increased intraepithelial lymphocytes.' },
+            { id: 6, topic: 'Wilson Disease', q: 'What is the molecular defect in Wilson disease?', a: 'Autosomal recessive mutation in the ATP7B gene, resulting in impaired biliary copper excretion and toxic copper accumulation.' },
+            { id: 7, topic: 'Acute Pancreatitis', q: 'What are the two most common overall causes of acute pancreatitis in the United States?', a: '1. Gallstones (cholelithiasis)\n2. Chronic alcohol abuse' },
+            { id: 8, topic: 'Ischemic Colitis', q: 'Why is the splenic flexure particularly vulnerable to non-occlusive ischemia?', a: 'It is a vascular watershed area located at the boundary between superior and inferior mesenteric arterial territories (Griffith point).' },
+            { id: 9, topic: 'Hepatic Encephalopathy', q: 'How do cerebral astrocytes detoxify excess ammonia in hepatic encephalopathy?', a: 'Using glutamine synthetase to combine glutamate and ammonia into glutamine, causing osmotic astrocyte swelling.' },
+            { id: 10, topic: 'Zollinger-Ellison Syndrome', q: 'What is the gold-standard diagnostic test for Zollinger-Ellison syndrome?', a: 'Secretin stimulation test, which causes a paradoxical increase in serum gastrin concentration.' }
+        ];
+
+        let currentIndex = 0;
+        let isShowingAnswer = false;
+        let reviewedCount = 0;
+        let userProgress = JSON.parse(localStorage.getItem('medchanic_anki_progress') || '{}');
+
+        function initDeck() {
+            document.getElementById('total-count').textContent = FLASHCARD_DECK.length;
+            document.getElementById('due-count').textContent = FLASHCARD_DECK.length;
+            loadCard();
+        }
+
+        function loadCard() {
+            if (currentIndex >= FLASHCARD_DECK.length) {
+                document.getElementById('study-area').style.display = 'none';
+                document.getElementById('finished-area').style.display = 'block';
+                return;
+            }
+            isShowingAnswer = false;
+            const card = FLASHCARD_DECK[currentIndex];
+            document.getElementById('card-topic').textContent = card.topic;
+            document.getElementById('card-side-indicator').textContent = 'Question';
+            document.getElementById('card-text').textContent = card.q;
+            document.getElementById('card-hint').textContent = 'Click card or press Space to reveal answer';
+            document.getElementById('rating-buttons').style.display = 'none';
+        }
+
+        function toggleCard() {
+            if (currentIndex >= FLASHCARD_DECK.length) return;
+            const card = FLASHCARD_DECK[currentIndex];
+            isShowingAnswer = !isShowingAnswer;
+            
+            if (isShowingAnswer) {
+                document.getElementById('card-side-indicator').textContent = 'Answer';
+                document.getElementById('card-text').innerHTML = card.a.replace(/\\n/g, '<br>');
+                document.getElementById('card-hint').textContent = 'Rate your recall below';
+                document.getElementById('rating-buttons').style.display = 'grid';
+            } else {
+                document.getElementById('card-side-indicator').textContent = 'Question';
+                document.getElementById('card-text').textContent = card.q;
+                document.getElementById('card-hint').textContent = 'Click card or press Space to reveal answer';
+                document.getElementById('rating-buttons').style.display = 'none';
+            }
+        }
+
+        function rateCard(rating) {
+            const card = FLASHCARD_DECK[currentIndex];
+            const currentCardState = userProgress[card.id] || { interval: 0, repetition: 0, easeFactor: 2.5 };
+            const updatedState = AnkiEngine.calculateNextReview(currentCardState, rating);
+            
+            userProgress[card.id] = updatedState;
+            localStorage.setItem('medchanic_anki_progress', JSON.stringify(userProgress));
+            
+            reviewedCount++;
+            document.getElementById('reviewed-count').textContent = reviewedCount;
+            document.getElementById('due-count').textContent = Math.max(0, FLASHCARD_DECK.length - reviewedCount);
+            
+            currentIndex++;
+            loadCard();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleCard();
+            } else if (isShowingAnswer) {
+                if (e.key === '1') rateCard('again');
+                if (e.key === '2') rateCard('good');
+                if (e.key === '3') rateCard('easy');
+            }
+        });
+
+        window.initDeck = initDeck;
+    </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef23e6c41708d',t:'MTc4NjAyODc5NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26f30b19ae2e30f',t:'MTc4NjAzMTM1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
 </body>
 </html>
