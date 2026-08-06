@@ -1034,7 +1034,8 @@
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
-      <a href="mailto:medchanicmd@gmail.com" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
+      <button onclick="window.location.href='flashcards.html'">Flashcards</button>
+      <a href="/cdn-cgi/l/email-protection#b7dad2d3d4dfd6d9ded4dad3f7d0dad6dedb99d4d8da" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
   </div>
@@ -1137,6 +1138,11 @@
         <div class="ac-icon">↺</div>
         <div class="ac-title">Review Previous Tests</div>
         <div class="ac-sub">Revisit past blocks and explanations</div>
+      </div>
+      <div class="action-card" onclick="window.location.href='flashcards.html'">
+        <div class="ac-icon">✦</div>
+        <div class="ac-title">Anki Flashcards</div>
+        <div class="ac-sub">Spaced repetition review by subject</div>
       </div>
     </div>
 
@@ -1529,7 +1535,7 @@
   </div>
 </div>
 
-<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script type="module">
 import { Client, Account, Databases, ID, Query, Functions } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
@@ -3426,7 +3432,7 @@ document.addEventListener('keydown', e => {
     <div class="promo-msg" id="promoMsg"></div>
 
     <div class="paywall-foot" style="margin-top:16px;">
-      Questions? <a href="mailto:medchanicmd@gmail.com">Contact us</a> ·
+      Questions? <a href="/cdn-cgi/l/email-protection#6f020a0b0c070e01060c020b2f08020e0603410c0002">Contact us</a> ·
       <a href="terms.html" target="_blank">Terms</a> ·
       <a href="privacy.html" target="_blank">Privacy</a>
     </div>
@@ -3515,5 +3521,6 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
-</body>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef219f90c708d',t:'MTc4NjAyODc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

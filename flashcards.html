@@ -26,13 +26,11 @@
 <body>
     <header class="navbar">
         <div class="nav-brand">
-            <a href="index.html" style="text-decoration: none; color: inherit;">Medchanic<span>.MD</span></a>
+            <a href="dashboard.html" style="text-decoration: none; color: inherit;">Medchanic<span>.MD</span></a>
         </div>
         <div class="nav-links">
-            <a href="index.html">Dashboard</a>
-            <a href="create-test.html">Create Test</a>
+            <a href="dashboard.html">Dashboard</a>
             <a href="flashcards.html" class="active">Flashcards</a>
-            <a href="review.html">Test History</a>
         </div>
     </header>
 
@@ -68,14 +66,12 @@
         <div id="finished-area" style="display: none; text-align: center; background: white; border: 1px solid var(--border-color); padding: 50px; border-radius: 12px; margin-top: 20px;">
             <h2 style="font-size: 1.5rem; margin-bottom: 10px;">Congratulations!</h2>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">You have completed all due flashcards for this session.</p>
-            <a href="index.html" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: var(--accent-blue); color: white; border-radius: 6px; font-weight: 600;">Return to Dashboard</a>
+            <a href="dashboard.html" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: var(--accent-blue); color: white; border-radius: 6px; font-weight: 600;">Return to Dashboard</a>
         </div>
     </main>
 
-    <script src="js/appwrite-config.js"></script>
     <script src="js/anki-engine.js"></script>
     <script>
-        // Sample Flashcard Deck derived from Gastroenterology & Nutrition
         const FLASHCARD_DECK = [
             { id: 1, topic: 'Diverticular Bleeding', q: 'What is the underlying anatomical mechanism of painless massive lower GI bleeding in diverticulosis?', a: 'Rupture of vasa recta vessels traversing the muscular wall within false diverticula, most commonly in the sigmoid colon.' },
             { id: 2, topic: 'Barrett Esophagus', q: 'What histological epithelial metaplasia characterizes Barrett esophagus?', a: 'Metaplasia of nonkeratinizing stratified squamous epithelium into nonciliated simple columnar epithelium with goblet cells.' },
@@ -96,7 +92,7 @@
 
         function initDeck() {
             document.getElementById('total-count').textContent = FLASHCARD_DECK.length;
-            document.getElementById('due-count').textContent = FLASHCARD_DECK.length; // simplified for demo
+            document.getElementById('due-count').textContent = FLASHCARD_DECK.length;
             loadCard();
         }
 
@@ -149,7 +145,6 @@
             loadCard();
         }
 
-        // Keyboard shortcuts (Space to flip, 1=Again, 2=Good, 3=Easy)
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -163,6 +158,6 @@
 
         window.onload = initDeck;
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26e9a137e037e8b',t:'MTc4NjAyNTE4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-</body>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef23e6c41708d',t:'MTc4NjAyODc5NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
