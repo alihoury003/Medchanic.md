@@ -1049,6 +1049,7 @@
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+      <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
       <button onclick="window.location.href='flashcards.html'">Flashcards</button>
       <a href="/cdn-cgi/l/email-protection#b7dad2d3d4dfd6d9ded4dad3f7d0dad6dedb99d4d8da" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
@@ -1159,6 +1160,11 @@
         <div class="ac-title">Anki Flashcards</div>
         <div class="ac-sub">Spaced repetition review by subject</div>
       </div>
+      <div class="action-card" onclick="window.location.href='flashcards.html'">
+        <div class="ac-icon">✦</div>
+        <div class="ac-title">Anki Flashcards</div>
+        <div class="ac-sub">Spaced repetition review by subject</div>
+      </div>
     </div>
 
     <div class="reset-zone">
@@ -1177,6 +1183,7 @@
       <button class="active" data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+      <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
     </div>
     <div class="user-pill" onclick="doLogout()">Log out</div>
   </div>
@@ -1235,6 +1242,7 @@
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button class="active" data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+      <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
     </div>
     <div class="user-pill" onclick="doLogout()">Log out</div>
   </div>
@@ -1245,7 +1253,7 @@
 </div>
 
 
-<!-- ===================== FLASHCARDS ===================== -->
+<!-- ===================== FLASHCARDS SCREEN ===================== -->
 <div class="screen" id="screen-flashcards">
   <div class="app-topbar">
     <div class="brand" onclick="goScreen('dashboard')"><span class="mark">⚙</span>MEDCHANIC.MD</div>
@@ -1254,7 +1262,8 @@
       <button data-nav="create" onclick="goScreen('create')">Create Test</button>
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
-      <button class="active" data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
+      <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
+      <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
     </div>
     <div class="user-pill" onclick="doLogout()">Log out</div>
   </div>
@@ -3680,6 +3689,6 @@ document.addEventListener('keydown', e => {
     </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef23e6c41708d',t:'MTc4NjAyODc5NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26f38f19e3be30f',t:'MTc4NjAzMTY5MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-</body>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26fa79b68b6e30f',t:'MTc4NjAzNjIyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
