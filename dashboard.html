@@ -1020,21 +1020,25 @@
 <style>
   .fc-tabs .btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink-soft); }
   .fc-tabs .btn.btn-primary { background: var(--clinical-blue); border-color: var(--clinical-blue); color: white; }
-  .fc-browse-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .fc-browse-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .streak-day-cell { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 10px 4px; min-height: 55px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; cursor: default; transition: border-color 0.12s; }
   .streak-day-cell:hover { border-color: var(--clinical-blue); }
   .streak-tooltip { visibility: hidden; width: 140px; background: var(--ink); color: var(--paper); text-align: center; border-radius: 6px; padding: 6px 8px; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); font-family: var(--sans); font-size: 11.5px; opacity: 0; transition: opacity 0.2s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
   .streak-day-cell:hover .streak-tooltip { visibility: visible; opacity: 1; }
+  .system-group-header { background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 8px; font-family: var(--mono); font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .subtopic-group-header { background: var(--paper); border: 1px solid var(--line); padding: 10px 16px; border-radius: 6px; font-family: var(--sans); font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-left: 16px; }
 </style>
 
 <style>
   .fc-tabs .btn { font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink-soft); }
   .fc-tabs .btn.btn-primary { background: var(--clinical-blue); border-color: var(--clinical-blue); color: white; }
-  .fc-browse-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .fc-browse-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .streak-day-cell { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 10px 4px; min-height: 55px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; cursor: default; transition: border-color 0.12s; }
   .streak-day-cell:hover { border-color: var(--clinical-blue); }
   .streak-tooltip { visibility: hidden; width: 140px; background: var(--ink); color: var(--paper); text-align: center; border-radius: 6px; padding: 6px 8px; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); font-family: var(--sans); font-size: 11.5px; opacity: 0; transition: opacity 0.2s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
   .streak-day-cell:hover .streak-tooltip { visibility: visible; opacity: 1; }
+  .system-group-header { background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 8px; font-family: var(--mono); font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .subtopic-group-header { background: var(--paper); border: 1px solid var(--line); padding: 10px 16px; border-radius: 6px; font-family: var(--sans); font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-left: 16px; }
 </style>
 </head>
 <body>
@@ -1272,7 +1276,7 @@
       <div>
         <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 6px;">Spaced Repetition Studio</div>
         <h1 style="font-family: var(--serif); font-size: 28px; margin: 0 0 6px 0; font-weight: 700;">High-Yield Flashcard Deck</h1>
-        <p style="font-family: var(--sans); font-size: 14px; opacity: 0.9; margin: 0;">Optimized for 90% retention across all USMLE body systems.</p>
+        <p style="font-family: var(--sans); font-size: 14px; opacity: 0.9; margin: 0;">5,100+ mechanism-oriented flashcards across all USMLE body systems.</p>
       </div>
       <div>
         <button id="startReviewMainBtn" onclick="switchFCTab('study'); startStudySessionFromMain();" style="background: white; color: var(--clinical-blue); border: none; padding: 14px 28px; border-radius: 8px; font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.15); transition: transform 0.1s;">
@@ -1322,13 +1326,13 @@
       </div>
     </div>
 
-    <!-- TAB 2: BROWSE & MANAGE -->
+    <!-- TAB 2: BROWSE & MANAGE (GROUPED BY SYSTEM & SUB-TOPIC) -->
     <div id="fcview-browse" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 14px; flex-wrap: wrap;">
-        <input type="text" id="fcSearchInput" placeholder="Search cards by body system, topic, or keyword…" oninput="renderBrowseTree()" style="flex: 1; min-width: 260px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--sans); font-size: 14px; background: var(--panel); color: var(--ink);">
+        <input type="text" id="fcSearchInput" placeholder="Search cards by body system, sub-topic, or keyword…" oninput="renderBrowseTree()" style="flex: 1; min-width: 260px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--sans); font-size: 14px; background: var(--panel); color: var(--ink);">
         <button class="btn btn-ghost" onclick="unsuspendAllCards()" style="padding: 12px 20px;">Unsuspend All Cards</button>
       </div>
-      <div id="fcBrowseList" style="display: flex; flex-direction: column; gap: 12px; max-height: 650px; overflow-y: auto; padding-right: 4px;"></div>
+      <div id="fcBrowseTree" style="display: flex; flex-direction: column; gap: 16px; max-height: 680px; overflow-y: auto; padding-right: 4px;"></div>
     </div>
 
     <!-- TAB 3: STATS & STREAK CALENDAR (MAIN OVERVIEW TAB) -->
@@ -2822,7 +2826,17 @@ function renderBlockQuestion() {
         <span class="obj-tag">${q.subject} · ${q.system}</span>
         <div class="objective">${q.objective}</div>
         <div class="rationale">${rationaleContent}</div>
-        <div class="why-wrong">
+        
+<div style="margin-top:20px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:16px;" id="relevantFlashcardsWidget">
+  <div style="font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--clinical-blue); font-weight:700; margin-bottom:8px;">Relevant Flashcards</div>
+  <div style="font-family:var(--sans); font-size:13px; color:var(--ink-soft); margin-bottom:12px;">Review or unsuspend high-yield flashcards related to this concept:</div>
+  <div id="relevantFlashcardsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+  <div style="margin-top:12px; display:flex; gap:10px;">
+    <button class="btn btn-primary" style="font-size:12px; padding:6px 14px;" onclick="unsuspendCurrentQuestionCards()">Unsuspend All Suggested Cards</button>
+  </div>
+</div>
+
+<div class="why-wrong">
           <div class="why-wrong-title">Why the other choices are wrong</div>
           ${q.whyWrong.map(w => `<div class="why-row"><span class="wl">${w.letter}.</span><span>${w.text}</span></div>`).join('')}
         </div>
@@ -3661,7 +3675,45 @@ document.addEventListener('keydown', e => {
         </div>
       </div>
 
-      <div class="admin-field">
+      <div cla
+
+<script>
+function renderRelevantFlashcardsForCurrentQ() {
+    const widget = document.getElementById('relevantFlashcardsWidget');
+    const listEl = document.getElementById('relevantFlashcardsList');
+    if (!widget || !listEl || !activeBlock) return;
+    const qid = activeBlock.qIds[current];
+    const q = questionBank.find(qq => qq.id === qid);
+    if (!q || typeof FULL_FLASHCARD_DECK === 'undefined') { widget.style.display = 'none'; return; }
+
+    const matches = FULL_FLASHCARD_DECK.filter(c => c.system === q.system || c.subject === q.subject).slice(0, 3);
+    if (matches.length === 0) {
+        widget.style.display = 'none';
+        return;
+    }
+    widget.style.display = 'block';
+    listEl.innerHTML = matches.map(card => {
+        const isSusp. = !!fcSuspended[card.id];
+        return '<div style="background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;"><div><span style="font-family:var(--mono); font-size:10px; color:var(--clinical-blue);">' + card.system + ' · ' + card.topic + '</span><div style="font-size:12.5px; color:var(--ink); margin-top:2px;">' + card.q.substring(0, 80) + '…</div></div><button class="btn ' + (isSusp. ? 'btn-ghost' : 'btn-primary') + '" style="font-size:11px; padding:4px 8px;" onclick="toggleSuspendCard(\'' + card.id + '\'); renderRelevantFlashcardsForCurrentQ();">' + (isSusp. ? 'Unsuspend' : 'Suspended') + '</button></div>';
+    }).join('');
+}
+
+function unsuspendCurrentQuestionCards() {
+    if (!activeBlock) return;
+    const qid = activeBlock.qIds[current];
+    const q = questionBank.find(qq => qq.id === qid);
+    if (!q || typeof FULL_FLASHCARD_DECK === 'undefined') return;
+    const matches = FULL_FLASHCARD_DECK.filter(c => c.system === q.system || c.subject === q.subject).slice(0, 3);
+    matches.forEach(card => {
+        if (fcSuspended[card.id]) delete fcSuspended[card.id];
+    });
+    localStorage.setItem('medchanic_anki_suspended', JSON.stringify(fcSuspended));
+    alert('All suggested relevant flashcards for this question have been unsuspended!');
+    renderRelevantFlashcardsForCurrentQ();
+}
+</script>
+
+ss="admin-field">
         <label>Learning objective (one line)</label>
         <input type="text" id="aObjective" placeholder="Identify X as the cause of Y in a patient with Z">
       </div>
@@ -3675,14 +3727,7 @@ document.addEventListener('keydown', e => {
         <label>Why each wrong answer is wrong</label>
         <div class="admin-choices">
           <div class="admin-choice-row"><span class="admin-choice-letter">A</span><input type="text" id="aW_A" placeholder="Why A is wrong"></div>
-          <div class="admin-choice-row"><span class="admin-choice-letter">B</span><input type="text" id="aW_B" placeholder="Why B is wrong"></div>
-          <div class="admin-choice-row"><span class="admin-choice-letter">C</span><input type="text" id="aW_C" placeholder="Why C is wrong"></div>
-          <div class="admin-choice-row"><span class="admin-choice-letter">D</span><input type="text" id="aW_D" placeholder="Why D is wrong"></div>
-          <div class="admin-choice-row"><span class="admin-choice-letter">E</span><input type="text" id="aW_E" placeholder="Why E is wrong"></div>
-        </div>
-      </div>
-
-      <button class="admin-save-btn" id="adminSaveBtn" onclick="adminSaveQuestion()"
+          <div class="admin-choice-row"><span class="admin-choice-letter">B</span><input type="text" id="aW_B" placeholder="W
 
 <script src="js/flashcard-database.js"></script>
 <script>
@@ -3726,7 +3771,8 @@ function startStudySessionFromMain() {
 
 function switchFCTab(tabName) {
     ['study', 'browse', 'stats'].forEach(t => {
-        document.getElementById('fcview-' + t).style.display = t === tabName ? 'block' : 'none';
+        const el = document.getElementById('fcview-' + t);
+        if (el) el.style.display = t === tabName ? 'block' : 'none';
         const btn = document.getElementById('fctab-' + t);
         if (btn) {
             btn.className = t === tabName ? 'btn btn-primary' : 'btn btn-ghost';
@@ -3779,7 +3825,8 @@ function updateFlashcardStats() {
     });
 
     const totalCount = FULL_FLASHCARD_DECK.filter(c => !fcSuspended[c.id]).length;
-    document.getElementById('fc-deck-status').textContent = 'Due: ' + due + ' · New: ' + newCards + ' · Learning: ' + learning + ' · Active Deck: ' + totalCount;
+    const statusEl = document.getElementById('fc-deck-status');
+    if (statusEl) statusEl.textContent = 'Due: ' + due + ' · New: ' + newCards + ' · Learning: ' + learning + ' · Active Deck: ' + totalCount;
     
     const reviewBtn = document.getElementById('startReviewMainBtn');
     if (reviewBtn) {
@@ -3792,56 +3839,77 @@ function updateFlashcardStats() {
     const timeTodayMin = (timeTodaySec / 60).toFixed(1);
     const avgTimeSec = cardsDoneToday > 0 ? Math.round(timeTodaySec / cardsDoneToday) : 0;
 
-    document.getElementById('stat-cards-today').textContent = cardsDoneToday;
-    document.getElementById('stat-time-today').textContent = timeTodayMin + 'm';
-    document.getElementById('stat-avg-time').textContent = avgTimeSec + 's';
+    const st1 = document.getElementById('stat-cards-today');
+    if (st1) st1.textContent = cardsDoneToday;
+    const st2 = document.getElementById('stat-time-today');
+    if (st2) st2.textContent = timeTodayMin + 'm';
+    const st3 = document.getElementById('stat-avg-time');
+    if (st3) st3.textContent = avgTimeSec + 's';
 
     const retention = totalReviews > 0 ? Math.round((correctReviews / totalReviews) * 100) : 100;
-    document.getElementById('stat-retention').textContent = retention + '%';
-    document.getElementById('stat-reviews-total').textContent = totalReviews;
+    const st4 = document.getElementById('stat-retention');
+    if (st4) st4.textContent = retention + '%';
+    const st5 = document.getElementById('stat-reviews-total');
+    if (st5) st5.textContent = totalReviews;
     
     const activeDates = JSON.parse(localStorage.getItem('mc_activity') || '[]');
-    document.getElementById('stat-streak').textContent = activeDates.length + ' days';
+    const st6 = document.getElementById('stat-streak');
+    if (st6) st6.textContent = activeDates.length + ' days';
     const bannerStreak = document.getElementById('banner-streak-count');
     if (bannerStreak) bannerStreak.textContent = activeDates.length;
     const bannerDue = document.getElementById('banner-due-count');
     if (bannerDue) bannerDue.textContent = due;
 
-    document.getElementById('state-new').textContent = newCards;
-    document.getElementById('state-learning').textContent = learning;
-    document.getElementById('state-young').textContent = young;
-    document.getElementById('state-mature').textContent = mature;
+    const sn = document.getElementById('state-new');
+    if (sn) sn.textContent = newCards;
+    const sl = document.getElementById('state-learning');
+    if (sl) sl.textContent = learning;
+    const sy = document.getElementById('state-young');
+    if (sy) sy.textContent = young;
+    const sm = document.getElementById('state-mature');
+    if (sm) sm.textContent = mature;
 }
 
 function loadCurrentCard() {
     clearInterval(reviewTimerInterval);
     if (currentCardIndex >= studyQueue.length) {
-        document.getElementById('study-area').style.display = 'none';
-        document.getElementById('finished-area').style.display = 'block';
-        document.getElementById('fc-completion-stats').textContent = 'You reviewed ' + sessionReviewedCount + ' cards in ' + Math.round(totalReviewSecondsSession / 60) + ' minutes.';
+        const sa = document.getElementById('study-area');
+        if (sa) sa.style.display = 'none';
+        const fa = document.getElementById('finished-area');
+        if (fa) fa.style.display = 'block';
+        const cs = document.getElementById('fc-completion-stats');
+        if (cs) cs.textContent = 'You reviewed ' + sessionReviewedCount + ' cards in ' + Math.round(totalReviewSecondsSession / 60) + ' minutes.';
         recordStreakToday();
         return;
     }
-    document.getElementById('study-area').style.display = 'block';
-    document.getElementById('finished-area').style.display = 'none';
+    const sa = document.getElementById('study-area');
+    if (sa) sa.style.display = 'block';
+    const fa = document.getElementById('finished-area');
+    if (fa) fa.style.display = 'none';
 
     currentCardShowingAnswer = false;
     const card = studyQueue[currentCardIndex];
     
-    document.getElementById('card-system-topic').textContent = card.system + ' · ' + card.subject;
-    document.getElementById('card-side-indicator').textContent = 'QUESTION';
-    document.getElementById('card-text').textContent = card.q;
-    document.getElementById('card-hint').textContent = '💡 Click card or press Space to reveal answer';
-    document.getElementById('rating-buttons').style.display = 'none';
+    const cst = document.getElementById('card-system-topic');
+    if (cst) cst.textContent = card.system + ' · ' + card.subject;
+    const csi = document.getElementById('card-side-indicator');
+    if (csi) csi.textContent = 'QUESTION';
+    const ctxt = document.getElementById('card-text');
+    if (ctxt) ctxt.textContent = card.q;
+    const chint = document.getElementById('card-hint');
+    if (chint) chint.textContent = '💡 Click card or press Space to reveal answer';
+    const rbtns = document.getElementById('rating-buttons');
+    if (rbtns) rbtns.style.display = 'none';
 
     currentReviewSeconds = 0;
-    document.getElementById('fc-timer').textContent = '⏱ 0:00';
+    const ft = document.getElementById('fc-timer');
+    if (ft) ft.textContent = '⏱ 0:00';
     cardStartTime = Date.now();
     reviewTimerInterval = setInterval(() => {
         currentReviewSeconds++;
         const m = Math.floor(currentReviewSeconds / 60);
         const s = currentReviewSeconds % 60;
-        document.getElementById('fc-timer').textContent = '⏱ ' + m + ':' + String(s).padStart(2,'0');
+        if (ft) ft.textContent = '⏱ ' + m + ':' + String(s).padStart(2,'0');
     }, 1000);
 }
 
@@ -3850,16 +3918,21 @@ function toggleCard() {
     const card = studyQueue[currentCardIndex];
     currentCardShowingAnswer = !currentCardShowingAnswer;
 
+    const csi = document.getElementById('card-side-indicator');
+    const ctxt = document.getElementById('card-text');
+    const chint = document.getElementById('card-hint');
+    const rbtns = document.getElementById('rating-buttons');
+
     if (currentCardShowingAnswer) {
-        document.getElementById('card-side-indicator').textContent = 'ANSWER';
-        document.getElementById('card-text').innerHTML = card.a.replace(/\n/g, '<br>');
-        document.getElementById('card-hint').textContent = 'Rate your recall below (Press 1, 2, 3, or 4)';
-        document.getElementById('rating-buttons').style.display = 'grid';
+        if (csi) csi.textContent = 'ANSWER';
+        if (ctxt) ctxt.innerHTML = card.a.replace(/\n/g, '<br>');
+        if (chint) chint.textContent = 'Rate your recall below (Press 1, 2, 3, or 4)';
+        if (rbtns) rbtns.style.display = 'grid';
     } else {
-        document.getElementById('card-side-indicator').textContent = 'QUESTION';
-        document.getElementById('card-text').textContent = card.q;
-        document.getElementById('card-hint').textContent = '💡 Click card or press Space to reveal answer';
-        document.getElementById('rating-buttons').style.display = 'none';
+        if (csi) csi.textContent = 'QUESTION';
+        if (ctxt) ctxt.textContent = card.q;
+        if (chint) chint.textContent = '💡 Click card or press Space to reveal answer';
+        if (rbtns) rbtns.style.display = 'none';
     }
 }
 
@@ -3901,6 +3974,30 @@ function toggleSuspendCard(cardId) {
     updateFlashcardStats();
 }
 
+function toggleSuspendSystem(systemName) {
+    const cardsInSys = FULL_FLASHCARD_DECK.filter(c => c.system === systemName);
+    const allSuspended = cardsInSys.every(c => fcSuspended[c.id]);
+    cardsInSys.forEach(c => {
+        if (allSuspended) delete fcSuspended[c.id];
+        else fcSuspended[c.id] = true;
+    });
+    localStorage.setItem('medchanic_anki_suspended', JSON.stringify(fcSuspended));
+    renderBrowseTree();
+    updateFlashcardStats();
+}
+
+function toggleSuspendSubtopic(subtopicName) {
+    const cardsInSub = FULL_FLASHCARD_DECK.filter(c => c.subject === subtopicName);
+    const allSuspended = cardsInSub.every(c => fcSuspended[c.id]);
+    cardsInSub.forEach(c => {
+        if (allSuspended) delete fcSuspended[c.id];
+        else fcSuspended[c.id] = true;
+    });
+    localStorage.setItem('medchanic_anki_suspended', JSON.stringify(fcSuspended));
+    renderBrowseTree();
+    updateFlashcardStats();
+}
+
 function unsuspendAllCards() {
     fcSuspended = {};
     localStorage.setItem('medchanic_anki_suspended', JSON.stringify(fcSuspended));
@@ -3924,27 +4021,62 @@ function unsuspendCardsForIncorrect(questionIds) {
 
 function renderBrowseTree() {
     const query = (document.getElementById('fcSearchInput').value || '').toLowerCase();
-    const listEl = document.getElementById('fcBrowseList');
+    const treeEl = document.getElementById('fcBrowseTree');
+    if (!treeEl) return;
     
     const filtered = FULL_FLASHCARD_DECK.filter(c => 
         c.q.toLowerCase().includes(query) || c.topic.toLowerCase().includes(query) || c.system.toLowerCase().includes(query) || c.subject.toLowerCase().includes(query)
     );
 
     if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="perf-empty">No flashcards match your search query.</div>';
+        treeEl.innerHTML = '<div class="perf-empty">No flashcards match your search query.</div>';
         return;
     }
 
-    listEl.innerHTML = filtered.slice(0, 100).map(card => {
-        const isSuspended = !!fcSuspended[card.id];
-        const btnText = isSuspended ? 'Unsuspend' : 'Suspend';
-        const btnClass = isSuspended ? 'btn btn-ghost' : 'btn btn-primary';
-        return '<div class="fc-browse-card"><div><div style="font-family: var(--mono); font-size: 11px; color: var(--clinical-blue); text-transform: uppercase;">' + card.system + ' · ' + card.subject + '</div><div style="font-family: var(--sans); font-size: 13.5px; color: var(--ink); margin-top: 4px;">' + card.q.substring(0, 110) + '…</div></div><div><button class="' + btnClass + '" style="font-size: 12px; padding: 6px 12px;" onclick="toggleSuspendCard(\'' + card.id + '\')">' + btnText + '</button></div></div>';
-    }).join('') + (filtered.length > 100 ? '<div style="text-align:center; color:var(--ink-faint); font-size:12px; padding:10px;">Showing first 100 matching cards. Refine search for specific sub-topics.</div>' : '');
+    const grouped = {};
+    filtered.forEach(card => {
+        if (!grouped[card.system]) grouped[card.system] = {};
+        if (!grouped[card.system][card.subject]) grouped[card.system][card.subject] = [];
+        grouped[card.system][card.subject].push(card);
+    });
+
+    let html = '';
+    for (const [systemName, subtopics] of Object.entries(grouped)) {
+        const sysCards = [];
+        Object.values(subtopics).forEach(arr => sysCards.push(...arr));
+        const sysAllSuspended = sysCards.every(c => fcSuspended[c.id]);
+
+        html += '<div style="margin-bottom: 14px;">';
+        html += '<div class="system-group-header"><span>📁 ' + systemName + ' (' + sysCards.length + ' cards)</span>';
+        html += '<button class="btn ' + (sysAllSuspended ? 'btn-ghost' : 'btn-primary') + '" style="font-size:11px; padding:4px 10px; background:' + (sysAllSuspended ? 'var(--panel)' : 'var(--clinical-blue)') + '; color:' + (sysAllSuspended ? 'var(--ink)' : 'white') + ';" onclick="toggleSuspendSystem(\'' + systemName + '\')">' + (sysAllSuspended ? 'Unsuspend System' : 'Suspend System') + '</button></div>';
+
+        for (const [subName, cardsList] of Object.entries(subtopics)) {
+            const subAllSuspended = cardsList.every(c => fcSuspended[c.id]);
+            html += '<div class="subtopic-group-header"><span>📂 ' + subName + ' (' + cardsList.length + ' cards)</span>';
+            html += '<button class="btn ' + (subAllSuspended ? 'btn-ghost' : 'btn-primary') + '" style="font-size:11px; padding:3px 8px;" onclick="toggleSuspendSubtopic(\'' + subName + '\')">' + (subAllSuspended ? 'Unsuspend Subtopic' : 'Suspend Subtopic') + '</button></div>';
+
+            html += '<div style="margin-left: 32px; margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">';
+            cardsList.slice(0, 30).forEach(card => {
+                const isSuspended = !!fcSuspended[card.id];
+                const btnText = isSuspended ? 'Unsuspend' : 'Suspend';
+                const btnClass = isSuspended ? 'btn btn-ghost' : 'btn btn-primary';
+                html += '<div class="fc-browse-card"><div><div style="font-family: var(--mono); font-size: 11px; color: var(--clinical-blue); text-transform: uppercase;">' + card.topic + '</div><div style="font-family: var(--sans); font-size: 13.5px; color: var(--ink); margin-top: 4px;">' + card.q.substring(0, 110) + '…</div></div><div><button class="' + btnClass + '" style="font-size: 11px; padding: 6px 12px;" onclick="toggleSuspendCard(\'' + card.id + '\')">' + btnText + '</button></div></div>';
+            });
+            if (cardsList.length > 30) {
+                html += '<div style="font-size:12px; color:var(--ink-faint); padding:6px 16px;">+ ' + (cardsList.length - 30) + ' more cards in this sub-topic (use search to find specific cards).</div>';
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+
+    treeEl.innerHTML = html;
 }
 
 function updateStreakEmoji() {
-    userEmoji = document.getElementById('streakEmojiSelect').value;
+    const sel = document.getElementById('streakEmojiSelect');
+    if (!sel) return;
+    userEmoji = sel.value;
     localStorage.setItem('medchanic_streak_emoji', userEmoji);
     renderStreakCalendar();
 }
@@ -4017,7 +4149,14 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 
->Save question to bank</button>
+hy B is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">C</span><input type="text" id="aW_C" placeholder="Why C is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">D</span><input type="text" id="aW_D" placeholder="Why D is wrong"></div>
+          <div class="admin-choice-row"><span class="admin-choice-letter">E</span><input type="text" id="aW_E" placeholder="Why E is wrong"></div>
+        </div>
+      </div>
+
+      <button class="admin-save-btn" id="adminSaveBtn" onclick="adminSaveQuestion()">Save question to bank</button>
 
       <hr class="admin-divider">
 
@@ -4030,5 +4169,5 @@ document.addEventListener('keydown', (e) => {
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef219f90c708d',t:'MTc4NjAyODc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a27463d8de08e30a',t:'MTc4NjA4NTg3Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26ef219f90c708d',t:'MTc4NjAyODc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
