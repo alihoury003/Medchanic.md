@@ -1,0 +1,173 @@
+<!-- ===================== FLASHCARDS SCREEN ===================== -->
+<div class="screen" id="screen-flashcards">
+  <div class="app-topbar">
+    <div class="brand" onclick="goScreen('dashboard')"><span class="mark">⚙</span>MEDCHANIC.MD</div>
+    <div class="app-nav">
+      <button data-nav="dashboard" onclick="goScreen('dashboard')">Dashboard</button>
+      <button data-nav="create" onclick="goScreen('create')">Create Test</button>
+      <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
+      <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
+      <button class="active" data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
+    </div>
+    <div class="user-pill" onclick="doLogout()">Log out</div>
+  </div>
+
+  <div class="flashcard-app-wrap" style="max-width: 1040px; margin: 36px auto; padding: 0 24px;">
+    <!-- Vibrant Header Banner -->
+    <div style="background: linear-gradient(135deg, var(--clinical-blue), var(--clinical-blue-dark)); color: white; border-radius: 12px; padding: 32px 36px; margin-bottom: 28px; box-shadow: 0 10px 30px rgba(43,108,176,0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 6px;">Spaced Repetition Studio</div>
+        <h1 style="font-family: var(--serif); font-size: 28px; margin: 0 0 6px 0; font-weight: 700;">High-Yield Flashcard Deck</h1>
+        <p style="font-family: var(--sans); font-size: 14px; opacity: 0.9; margin: 0;">2,750+ mechanism-oriented flashcards across all USMLE body systems.</p>
+      </div>
+      <div>
+        <button id="startReviewMainBtn" onclick="switchFCTab('study'); startStudySessionFromMain();" style="background: white; color: var(--clinical-blue); border: none; padding: 14px 28px; border-radius: 8px; font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.15); transition: transform 0.1s;">
+          ⚡ Review 0 Cards Due
+        </button>
+      </div>
+    </div>
+
+    <!-- Flashcard Tabs -->
+    <div class="fc-tabs" style="display: flex; gap: 12px; margin-bottom: 28px; border-bottom: 2px solid var(--line); padding-bottom: 14px;">
+      <button class="btn btn-primary" id="fctab-stats" onclick="switchFCTab('stats')" style="padding: 10px 20px; font-size: 13.5px;">📊 Statistics &amp; Streaks</button>
+      <button class="btn btn-ghost" id="fctab-study" onclick="switchFCTab('study')" style="padding: 10px 20px; font-size: 13.5px;">⚡ Study Deck</button>
+      <button class="btn btn-ghost" id="fctab-browse" onclick="switchFCTab('browse')" style="padding: 10px 20px; font-size: 13.5px;">🔍 Anki Browser</button>
+    </div>
+
+    <!-- TAB 1: STUDY -->
+    <div id="fcview-study" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); font-weight: 600;" id="fc-deck-status">Due: 0 · New: 0 · Learning: 0</div>
+        <div id="fc-timer" style="font-family: var(--mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); padding: 5px 12px; border-radius: 6px; font-weight: 600;">⏱ 0:00</div>
+      </div>
+
+      <!-- Gorgeous Live Card Layout -->
+      <div class="card-box" id="card-box" onclick="toggleCard()" style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 48px; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--clinical-blue), var(--correct));"></div>
+        <div style="display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11.5px; color: var(--clinical-blue); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 18px; font-weight: 700;">
+          <span id="card-system-topic" style="background: var(--clinical-blue-soft); padding: 4px 10px; border-radius: 4px;">System · Sub-Topic</span>
+          <span id="card-side-indicator" style="color: var(--ink-faint); font-weight: 600;">QUESTION</span>
+        </div>
+        <div class="card-content" id="card-text" style="font-family: var(--serif); font-size: 19px; line-height: 1.65; color: var(--ink); text-align: left; margin: auto 0; padding: 12px 0;">Loading cards…</div>
+        <div class="card-hint" id="card-hint" style="font-family: var(--mono); font-size: 12px; color: var(--ink-faint); text-align: center; margin-top: 28px; background: var(--paper); padding: 8px; border-radius: 6px;">💡 Click card or press Space to reveal answer</div>
+      </div>
+
+      <!-- Rating Buttons (Anki tuned) -->
+      <div class="rating-buttons" id="rating-buttons" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px;">
+        <button class="rate-btn" style="background: #C0392B; color:white; padding: 14px; font-weight:700; border-radius:8px; border:none; cursor:pointer; font-family:var(--sans); font-size:13px; box-shadow: 0 4px 12px rgba(192,57,43,0.2);" onclick="rateCard('again')">Again (&lt;1m)</button>
+        <button class="rate-btn" style="background: #C98A2C; color:white; padding: 14px; font-weight:700; border-radius:8px; border:none; cursor:pointer; font-family:var(--sans); font-size:13px; box-shadow: 0 4px 12px rgba(201,138,44,0.2);" onclick="rateCard('hard')">Hard (12h)</button>
+        <button class="rate-btn" style="background: var(--clinical-blue); color:white; padding: 14px; font-weight:700; border-radius:8px; border:none; cursor:pointer; font-family:var(--sans); font-size:13px; box-shadow: 0 4px 12px rgba(43,108,176,0.2);" onclick="rateCard('good')">Good (2d)</button>
+        <button class="rate-btn" style="background: var(--correct); color:white; padding: 14px; font-weight:700; border-radius:8px; border:none; cursor:pointer; font-family:var(--sans); font-size:13px; box-shadow: 0 4px 12px rgba(90,143,105,0.2);" onclick="rateCard('easy')">Easy (4d)</button>
+      </div>
+
+      <div id="finished-area" style="display: none; text-align: center; background: var(--panel); border: 1px solid var(--line); padding: 60px 30px; border-radius: 14px; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
+        <div style="font-size: 48px; margin-bottom: 14px;">🎉</div>
+        <h2 style="font-family: var(--serif); font-size: 26px; margin-bottom: 8px;">Review Session Complete!</h2>
+        <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 24px;" id="fc-completion-stats">You have completed all due flashcards for this session.</p>
+        <button class="btn btn-primary" onclick="switchFCTab('stats')" style="padding: 12px 24px; font-size: 14px;">View Statistics &amp; Calendar</button>
+      </div>
+    </div>
+
+    <!-- TAB 2: BROWSE & MANAGE (GROUPED BY SYSTEM & SUB-TOPIC) -->
+    <div id="fcview-browse" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 14px; flex-wrap: wrap;">
+        <input type="text" id="fcSearchInput" placeholder="Search cards by body system, sub-topic, or keyword…" oninput="renderAnkiBrowser()" style="flex: 1; min-width: 260px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--sans); font-size: 14px; background: var(--panel); color: var(--ink);">
+        <button class="btn btn-ghost" onclick="unsuspendAllCards()" style="padding: 12px 20px;">Unsuspend All Cards</button>
+      </div>
+
+      <!-- Anki Browser Split Layout -->
+      <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start;">
+        <!-- Left Sidebar: Body Systems & Sub-Topics Tree -->
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; max-height: 700px; overflow-y: auto;" id="ankiSidebarTree">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Right Main Panel: Cards Table/List -->
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-height: 700px; max-height: 700px; overflow-y: auto; display: flex; flex-direction: column;">
+          <div id="ankiBrowserHeader" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 14px;">
+            <div style="font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--ink);" id="ankiBrowserTitle">Select a Body System or Sub-Topic</div>
+            <div id="ankiBrowserBulkActions" style="display: flex; gap: 8px;"></div>
+          </div>
+          <div id="ankiCardsList" style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: STATS & STREAK CALENDAR (MAIN OVERVIEW TAB) -->
+    <div id="fcview-stats" style="display: block;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <div style="font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--clinical-blue);" id="stat-cards-today">0</div>
+          <div style="font-family: var(--sans); font-size: 13px; color: var(--ink-soft); margin-top: 4px; font-weight: 600;">Cards Done Today</div>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <div style="font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--ink);" id="stat-time-today">0m</div>
+          <div style="font-family: var(--sans); font-size: 13px; color: var(--ink-soft); margin-top: 4px; font-weight: 600;">Review Time Today</div>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <div style="font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--flag);" id="stat-avg-time">0s</div>
+          <div style="font-family: var(--sans); font-size: 13px; color: var(--ink-soft); margin-top: 4px; font-weight: 600;">Avg Time / Card</div>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <div style="font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--correct);" id="stat-retention">0%</div>
+          <div style="font-family: var(--sans); font-size: 13px; color: var(--ink-soft); margin-top: 4px; font-weight: 600;">Retention Rate</div>
+        </div>
+      </div>
+
+      <!-- Streak Calendar with Tooltips & View Selector -->
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); font-weight: 700;" id="calendarTitle">Streak Calendar Heatmap</div>
+            <div style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin-top: 2px;">Hover over past days for reviews done, future days for due cards</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 3px;">
+              <button class="btn btn-primary" id="calViewMonth" onclick="setCalendarView('month')" style="padding: 5px 12px; font-size: 12px;">Month</button>
+              <button class="btn btn-ghost" id="calViewWeek" onclick="setCalendarView('week')" style="padding: 5px 12px; font-size: 12px;">Week</button>
+              <button class="btn btn-ghost" id="calViewYear" onclick="setCalendarView('year')" style="padding: 5px 12px; font-size: 12px;">Year</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; background: var(--paper); padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line);">
+              <span style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-soft); font-weight: 600;">Stamp:</span>
+              <select id="streakEmojiSelect" onchange="updateStreakEmoji()" style="padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: 15px; cursor: pointer;">
+                <option value="⭐️">⭐️ Gold Star</option>
+                <option value="🩺">🩺 Stethoscope</option>
+                <option value="🧠">🧠 Brain</option>
+                <option value="💊">💊 Pill</option>
+                <option value="🔥">🔥 Fire</option>
+                <option value="🎯">🎯 Target</option>
+                <option value="🍀">🍀 Lucky</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="streakCalendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center;"></div>
+      </div>
+
+      <!-- Card States Breakdown -->
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+        <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin-bottom: 18px; font-weight: 700;">Card States &amp; Maturity Breakdown</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; text-align: center;">
+          <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px;">
+            <div style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--ink-soft);" id="state-new">0</div>
+            <div style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin-top: 4px; font-weight: 600;">New</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px;">
+            <div style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--clinical-blue);" id="state-learning">0</div>
+            <div style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin-top: 4px; font-weight: 600;">Learning</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px;">
+            <div style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--flag);" id="state-young">0</div>
+            <div style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin-top: 4px; font-weight: 600;">Young (&lt;21d)</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px;">
+            <div style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--correct);" id="state-mature">0</div>
+            <div style="font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint); margin-top: 4px; font-weight: 600;">Mature (21d+)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
