@@ -1051,7 +1051,7 @@
       <button data-nav="tests" onclick="goScreen('tests')">Previous Tests</button>
       <button data-nav="notebook" onclick="goScreen('notebook')">Notebook</button>
       <button data-nav="flashcards" onclick="goScreen('flashcards')">Flashcards</button>
-      <button onclick="window.location.href='flashcards.html'">Flashcards</button>
+      
       <a href="/cdn-cgi/l/email-protection#b7dad2d3d4dfd6d9ded4dad3f7d0dad6dedb99d4d8da" style="font-family:var(--sans);font-size:13px;padding:7px 14px;color:#B7B5AC;text-decoration:none;border-radius:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#B7B5AC'">Contact</a>
     </div>
     <div class="user-pill" id="userPill" onclick="doLogout()">Log out</div>
@@ -1161,11 +1161,7 @@
         <div class="ac-title">Medchanic.md flashcards</div>
         <div class="ac-sub">Spaced repetition review across all systems</div>
       </div>
-      <div class="action-card" onclick="window.location.href='flashcards.html'">
-        <div class="ac-icon">✦</div>
-        <div class="ac-title">Anki Flashcards</div>
-        <div class="ac-sub">Spaced repetition review by subject</div>
-      </div>
+      
     </div>
 
     <div class="reset-zone">
@@ -3623,7 +3619,13 @@ document.addEventListener('keydown', e => {
       </div>
     </div>
 
-    <button class="paywall-cta" id="subscribeBtn" onclick="handleSubscribeClick()">Subscribe for 3 months</button>
+    
+    <button class="paywall-cta" id="subscribeBtn" onclick="handleSubscribeClick()">Subscribe with Card (Paddle)</button>
+    <div style="display: flex; gap: 10px; margin-top: 12px;">
+      <button class="btn" style="flex: 1; background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="sendWhatsAppPaymentRequest()">Pay via WhatsApp (Instant)</button>
+      <button class="btn" style="flex: 1; background: #0088cc; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="sendTelegramPaymentRequest()">Pay via Telegram</button>
+    </div>
+
 
     <div class="promo-row">
       <input type="text" id="promoInput" placeholder="Have a promo code?" autocomplete="off">
@@ -4204,5 +4206,5 @@ document.addEventListener('keydown', (e) => {
     }
 });
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a35488f13d457154',t:'MTc4ODQzNjIwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
