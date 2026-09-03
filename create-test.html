@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medchanic.MD — Create Test</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/questions.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232b5be7'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-mark">M</div>
+        <span>Medchanic.<span class="brand-accent">MD</span></span>
+      </a>
+      <div class="navbar-links">
+        <a href="index.html">Dashboard</a>
+        <a href="create-test.html" class="active">Create Test</a>
+        <a href="review.html">Review</a>
+      </div>
+      <div class="navbar-user">
+        <span style="font-size:0.8125rem;color:var(--text-secondary)" id="userNameDisplay">User</span>
+        <div class="user-avatar" id="userAvatar">U</div>
+        <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="create-test-page">
+    <div class="welcome-section">
+      <h1>Create a Practice Test</h1>
+      <p>Customize your session by selecting subjects, body systems, and the number of questions.</p>
+    </div>
+
+    <!-- Mode Selection -->
+    <div class="test-config-section">
+      <h2 class="section-header">Test Mode</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+        <div class="subject-card selected" data-mode="timed" onclick="selectMode('timed',this)">
+          <h4>Timed Mode</h4>
+          <span class="q-count">Simulates real exam conditions with a timer</span>
+        </div>
+        <div class="subject-card" data-mode="tutor" onclick="selectMode('tutor',this)">
+          <h4>Tutor Mode</h4>
+          <span class="q-count">Instant feedback after each question</span>
+        </div>
+        <div class="subject-card" data-mode="untimed" onclick="selectMode('untimed',this)">
+          <h4>Untimed Mode</h4>
+          <span class="q-count">Practice at your own pace without a timer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subjects -->
+    <div class="test-config-section">
+      <h2 class="section-header">Subjects</h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-sm btn-secondary" onclick="selectAll(true)">Select All</button>
+        <button class="btn btn-sm btn-secondary" onclick="selectAll(false)">Deselect All</button>
+      </div>
+      <div id="subjectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+    </div>
+
+    <!-- Body Systems -->
+    <div class="test-config-section" id="bodySystemsSection" style="display:none;">
+      <h2 class="section-header">Body Systems <span style="font-size:0.8125rem;color:var(--text-muted);font-weight:400;">&mdash; optional, leave blank for all</span></h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-sm btn-secondary" onclick="selectAllBS(true)">Select All</button>
+        <button class="btn btn-sm btn-secondary" onclick="selectAllBS(false)">Deselect All</button>
+      </div>
+      <div id="bodySystemsGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <!-- Question Count -->
+    <div class="test-config-section">
+      <h2 class="section-header">Number of Questions</h2>
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="flex:1;">
+          <input type="range" class="q-count-slider" id="qSlider" min="1" max="200" value="40" oninput="updateQ(this.value)">
+        </div>
+        <div style="min-width:70px;text-align:center;">
+          <span id="qDisplay" style="font-size:1.75rem;font-weight:700;color:var(--accent-blue);">40</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">questions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start -->
+    <div style="text-align:center;padding:32px 0;">
+      <button class="btn btn-primary btn-lg" onclick="startTest()">Start Practice Test</button>
+      <p style="margin-top:8px;font-size:0.8125rem;color:var(--text-muted);" id="availCount">200 questions available</p>
+    </div>
+  </div>
+
+  <script>
+    var user = JSON.parse(localStorage.getItem('medchanic_user') || 'null');
+    if (!user || !user.isLoggedIn) window.location.href = 'login.html';
+    document.getElementById('userNameDisplay').textContent = user.name;
+    document.getElementById('userAvatar').textContent = (user.name || 'U')[0].toUpperCase();
+    function handleLogout() { localStorage.removeItem('medchanic_user'); window.location.href = 'login.html'; }
+
+    var cfg = { mode: 'timed', subs: [], bss: [], q: 40 };
+    var params = new URLSearchParams(window.location.search);
+
+    function selectMode(m, el) {
+      cfg.mode = m;
+      document.querySelectorAll('[data-mode]').forEach(function(e) { e.classList.remove('selected'); });
+      el.classList.add('selected');
+    }
+
+    
+    // Dynamic question counts excluding used/seen questions in test history
+    function getUsedQuestionIds() {
+      var history = JSON.parse(localStorage.getItem('medchanic_testHistory') || '[]');
+      var used = {};
+      history.forEach(function(t) {
+        (t.questions || []).forEach(function(q) {
+          if (q.selectedAnswer !== undefined && q.selectedAnswer !== null && q.selectedAnswer !== -1) {
+            used[q.id] = true;
+          }
+        });
+      });
+      return used;
+    }
+
+    function getDynamicAvailableQuestions() {
+      var all = QuestionBank.getAll();
+      var used = getUsedQuestionIds();
+      return all.filter(function(q) { return !used[q.id]; });
+    }
+
+    function getDynamicCountBySubject() {
+      var pool = getDynamicAvailableQuestions();
+      var counts = {};
+      pool.forEach(function(q) {
+        counts[q.subject] = (counts[q.subject] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function renderSubs() {
+      var grid = document.getElementById('subjectsGrid');
+      var counts = getDynamicCountBySubject();
+      grid.innerHTML = QuestionBank.getSubjects().map(function(s) {
+        var sel = cfg.subs.indexOf(s) >= 0;
+        return '<div class="subject-card' + (sel ? ' selected' : '') + '" onclick="toggleSub(\'' + s + '\')"><h4>' + s + '</h4><span class="q-count">' + (counts[s] || 0) + ' questions</span></div>';
+      }).join('');
+      if (cfg.subs.length === 0 && params.has('quick')) { cfg.subs = QuestionBank.getSubjects(); renderSubs(); }
+      updateBS();
+    }
+
+    function toggleSub(s) {
+      var i = cfg.subs.indexOf(s);
+      if (i >= 0) cfg.subs.splice(i,1); else cfg.subs.push(s);
+      renderSubs();
+    }
+
+    function selectAll(sel) { cfg.subs = sel ? QuestionBank.getSubjects() : []; renderSubs(); }
+
+    function updateBS() {
+      var sec = document.getElementById('bodySystemsSection'), grid = document.getElementById('bodySystemsGrid');
+      if (cfg.subs.length === 0) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+      var set = {};
+      cfg.subs.forEach(function(s) { QuestionBank.getBodySystemsForSubject(s).forEach(function(bs) { set[bs] = true; }); });
+      grid.innerHTML = Object.keys(set).sort().map(function(bs) {
+        var sel = cfg.bss.indexOf(bs) >= 0;
+        return '<div class="body-system-chip' + (sel ? ' selected' : '') + '" onclick="toggleBS(\'' + bs + '\')">' + bs + '</div>';
+      }).join('');
+      updateAvail();
+    }
+
+    function toggleBS(bs) { var i = cfg.bss.indexOf(bs); if (i >= 0) cfg.bss.splice(i,1); else cfg.bss.push(bs); updateBS(); }
+    function selectAllBS(sel) { var set = {}; cfg.subs.forEach(function(s) { QuestionBank.getBodySystemsForSubject(s).forEach(function(bs) { set[bs] = true; }); }); cfg.bss = sel ? Object.keys(set) : []; updateBS(); }
+    function updateQ(v) { cfg.q = parseInt(v); document.getElementById('qDisplay').textContent = v; }
+
+    function updateAvail() {
+      var pool = getDynamicAvailableQuestions();
+      if (cfg.subs.length > 0) pool = pool.filter(function(q) { return cfg.subs.indexOf(q.subject) >= 0; });
+      if (cfg.bss.length > 0) pool = pool.filter(function(q) { return cfg.bss.indexOf(q.bodySystem) >= 0; });
+      document.getElementById('availCount').textContent = pool.length + ' questions available';
+      document.getElementById('qSlider').max = Math.min(pool.length, 200);
+      if (cfg.q > pool.length) { cfg.q = pool.length; document.getElementById('qSlider').value = pool.length; document.getElementById('qDisplay').textContent = pool.length; }
+    }
+
+    function startTest() {
+      if (cfg.subs.length === 0) { alert('Please select at least one subject.'); return; }
+      var filters = {};
+      if (cfg.subs.length > 0) filters.subjects = cfg.subs;
+      if (cfg.bss.length > 0) filters.bodySystems = cfg.bss;
+      var questions = QuestionBank.getRandomQuestions(cfg.q, filters);
+      if (questions.length === 0) { alert('No questions match your criteria.'); return; }
+      var testConfig = { questions: questions, mode: cfg.mode, totalQuestions: questions.length, timeLimit: cfg.mode === 'timed' ? questions.length * 1.5 : null, startedAt: new Date().toISOString() };
+      localStorage.setItem('medchanic_currentTest', JSON.stringify(testConfig));
+      localStorage.removeItem('medchanic_currentAnswers');
+      localStorage.removeItem('medchanic_elapsed');
+      window.location.href = 'practice-test.html';
+    }
+
+    renderSubs();
+    if (params.has('quick') && cfg.subs.length > 0) setTimeout(startTest, 500);
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a355a110ff873f09',t:'MTc4ODQ0NzY4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
