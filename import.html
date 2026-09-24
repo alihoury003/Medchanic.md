@@ -1,1004 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Medchanic.md — Question Importer</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Medchanic.MD — Question Importer v2</title>
 <style>
-  :root {
-    --paper:#F7F7F5; --ink:#1A1D23; --muted:#6B7280; --line:#D9D7D0;
-    --blue:#2B6CB0; --blue2:#1F4F82; --green:#5A8F69; --red:#C0392B;
-    --amber:#B7791F; --dark:#151821; --dark2:#1D222D; --soft:#EEF2F7;
-  }
+  :root { --paper:#F3EFE6; --paper2:#EAE5D8; --card:#FFFDF8; --ink:#141311; --ink2:#4A4741; --ink3:#8A857A; --rule:#DDD6C6; --rule2:#EDE8DC;
+          --teal:#0E7C78; --teal2:#0A5F5C; --tealsoft:#D8ECE8; --coral:#E4572E; --coral2:#C2441F; --coralsoft:#FBE2D8; --amber:#EFA21B; --amber2:#B87A0C; --ambersoft:#FBEBC6;
+          --sans:Inter,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; --mono:"JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif; background:var(--paper); color:var(--ink); }
-  .top { background:var(--dark); color:white; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
-  .brand { font-weight:800; letter-spacing:.03em; }
-  .brand span { color:#9CC6F2; }
-  .user { font-size:13px; color:#C9D1DE; }
-  .wrap { max-width:1220px; margin:0 auto; padding:28px 18px 60px; }
-  .card { background:white; border:1px solid var(--line); border-radius:18px; box-shadow:0 12px 35px rgba(26,29,35,.08); overflow:hidden; margin-bottom:18px; }
-  .card-h { padding:20px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-  h1 { margin:0; font-size:24px; }
-  h2 { margin:0 0 8px; font-size:18px; }
-  h3 { margin:0 0 10px; font-size:16px; }
-  p { line-height:1.55; color:#4B5563; }
-  .card-b { padding:22px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .grid-3 { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; }
-  @media(max-width:900px){ .grid,.grid-3 { grid-template-columns:1fr; } }
-  label { display:block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#55606F; margin-bottom:8px; }
-  textarea, input, select { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 13px; font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; background:#FBFBFA; color:var(--ink); outline:none; }
-  select { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif; }
-  textarea:focus, input:focus, select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(43,108,176,.12); }
-  textarea { min-height:330px; resize:vertical; }
-  .btnrow { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
-  button { border:0; border-radius:999px; padding:10px 15px; font-weight:800; cursor:pointer; }
-  .primary { background:var(--blue); color:white; }
-  .primary:hover { background:var(--blue2); }
-  .secondary { background:#EEF2F7; color:#233044; }
-  .danger { background:#FDECEC; color:var(--red); }
-  .darkbtn { background:var(--dark); color:white; }
-  button:disabled { opacity:.55; cursor:not-allowed; }
-  .status { white-space:pre-wrap; background:#0F131B; color:#DDE6F3; border-radius:14px; padding:16px; min-height:160px; max-height:420px; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; overflow:auto; }
-  .note { background:#F4F8FD; border:1px solid #D7E6F7; color:#315272; padding:14px 16px; border-radius:14px; margin:0 0 16px; }
-  .warn { background:#FFF7E6; border:1px solid #F2D49B; color:#7A4B00; padding:14px 16px; border-radius:14px; margin:0 0 16px; }
-  .errorBox { background:#FFF2F2; border:1px solid #F2C5C5; color:#8A2520; padding:14px 16px; border-radius:14px; display:none; margin-top:12px; }
-  .okBox { background:#EFF8F1; border:1px solid #CFE9D4; color:#315F3D; padding:14px 16px; border-radius:14px; display:none; margin-top:12px; }
-  code { background:#EEF2F7; padding:2px 5px; border-radius:5px; }
-  .small { font-size:13px; color:#6B7280; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; }
+  .top { background:var(--ink); color:var(--paper); padding:14px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; position:sticky; top:0; z-index:10; }
+  .brand { font-weight:700; font-size:16px; letter-spacing:-.01em; } .brand small { font-family:var(--mono); font-size:10px; letter-spacing:.12em; background:var(--paper); color:var(--ink); padding:2px 5px; border-radius:2px; margin-left:8px; vertical-align:middle; }
+  .user { font-family:var(--mono); font-size:12px; color:#bdb8ab; }
+  .wrap { max-width:1280px; margin:0 auto; padding:24px 18px 80px; }
+  .card { background:var(--card); border:1px solid var(--rule); border-radius:6px; margin-bottom:18px; }
+  .card-h { padding:16px 20px; border-bottom:1px solid var(--rule); display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .card-h h2 { margin:0; font-size:16px; } .card-h p { margin:3px 0 0; font-size:12.5px; color:var(--ink3); }
+  .card-b { padding:18px 20px; }
+  .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink3); font-weight:600; display:block; margin-bottom:6px; }
+  textarea, input[type=text], input[type=search], select { width:100%; border:1px solid var(--rule); border-radius:4px; padding:10px 12px; font:13px/1.45 var(--mono); background:#fff; color:var(--ink); }
+  select, input[type=search] { font-family:var(--sans); }
+  textarea:focus, input:focus, select:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px var(--tealsoft); }
+  textarea { min-height:300px; resize:vertical; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+  button { border:1px solid transparent; border-radius:4px; padding:9px 14px; font:600 13px var(--sans); cursor:pointer; background:var(--paper2); color:var(--ink); }
+  button:hover { filter:brightness(.97); } button:disabled { opacity:.5; cursor:not-allowed; }
+  .ink { background:var(--ink); color:var(--paper); } .teal { background:var(--teal); color:#fff; } .ghost { background:transparent; border-color:var(--rule); color:var(--ink2); }
+  .danger { background:var(--coralsoft); color:var(--coral2); border-color:#F0C4BE; } .danger.solid { background:var(--coral2); color:#fff; }
+  .mini { padding:5px 9px; font-size:12px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media(max-width:960px){ .grid{grid-template-columns:1fr;} }
+  .log { white-space:pre-wrap; background:#141311; color:#E8E3D6; border-radius:4px; padding:14px; min-height:120px; max-height:360px; overflow:auto; font:12px/1.5 var(--mono); }
+  .box { border-radius:4px; padding:12px 14px; margin-top:12px; font-size:13px; display:none; } .box.show { display:block; }
+  .ok { background:var(--tealsoft); color:var(--teal2); border:1px solid #BFE0DA; } .err { background:var(--coralsoft); color:var(--coral2); border:1px solid #F0C4BE; } .warn { background:var(--ambersoft); color:var(--amber2); border:1px solid #F0D9A0; }
+  .pill { display:inline-block; font-family:var(--mono); font-size:11px; padding:3px 8px; border-radius:3px; background:var(--paper2); color:var(--ink2); margin:2px 4px 2px 0; }
+  .pill.t { background:var(--tealsoft); color:var(--teal2); } .pill.c { background:var(--coralsoft); color:var(--coral2); } .pill.a { background:var(--ambersoft); color:var(--amber2); }
+  .preview { border:1px solid var(--rule); border-radius:4px; background:#fff; padding:16px; min-height:300px; max-height:720px; overflow:auto; font-size:13.5px; }
+  .preview h4 { margin:14px 0 6px; font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink3); }
+  .stem { line-height:1.6; } .lead { font-weight:700; margin-top:8px; }
+  .ch { display:grid; grid-template-columns:24px 1fr; gap:8px; padding:7px 9px; border:1px solid var(--rule2); border-radius:3px; margin:4px 0; } .ch.correct { border-color:var(--teal); background:var(--tealsoft); } .ch b { color:var(--teal2); }
+  .rat p { margin:0 0 8px; } .ww { font-size:13px; color:var(--ink2); margin:4px 0; } .ww b { color:var(--ink); }
+  .issues { font-family:var(--mono); font-size:11.5px; color:var(--coral2); background:var(--coralsoft); border-radius:3px; padding:8px 10px; margin:8px 0; white-space:pre-wrap; }
+  .nav { display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink3); }
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:6px 0 14px; } @media(max-width:960px){ .stats{grid-template-columns:repeat(3,1fr);} }
+  .stat { background:var(--paper); border:1px solid var(--rule); border-radius:4px; padding:10px 12px; } .stat b { display:block; font-size:22px; font-weight:600; letter-spacing:-.02em; } .stat span { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); }
+  .letters { display:flex; gap:6px; align-items:flex-end; height:44px; } .letters div { flex:1; background:var(--teal); border-radius:2px 2px 0 0; position:relative; min-height:2px; } .letters div span { position:absolute; top:-16px; left:0; right:0; text-align:center; font:600 10px var(--mono); color:var(--ink2); } .letters div.bad { background:var(--coral); }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; } th { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); text-align:left; padding:6px 8px 8px 0; border-bottom:1px solid var(--rule); font-weight:500; } td { padding:8px 8px 8px 0; border-bottom:1px solid var(--rule2); vertical-align:top; }
+  tr:hover td { background:rgba(14,124,120,.04); }
+  .kz { border:1px solid #F0C4BE; background:#FFF6F3; border-radius:4px; padding:14px 16px; margin-top:14px; }
+  .kz h3 { margin:0 0 6px; font-size:14px; color:var(--coral2); }
+  .steps { font-size:12.5px; color:var(--ink2); margin:0; padding-left:18px; } .steps li { margin:3px 0; }
   .hidden { display:none !important; }
-  .pill { display:inline-block; background:#EEF2F7; color:#334155; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:800; }
-  .pill.red { background:#FDECEC; color:var(--red); }
-  .pill.green { background:#EFF8F1; color:#315F3D; }
-  .checkline { display:flex; gap:8px; align-items:center; margin-top:10px; color:#4B5563; font-size:13px; }
-  .checkline input { width:auto; }
-  .preview { border:1px solid var(--line); border-radius:14px; background:#FBFBFA; padding:16px; min-height:320px; }
-  .preview-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-  .preview-stem { white-space:pre-wrap; line-height:1.55; font-size:14px; color:#1F2937; border-top:1px solid var(--line); padding-top:12px; }
-  .choice { display:grid; grid-template-columns:32px 1fr; gap:8px; margin:8px 0; padding:9px 10px; background:white; border:1px solid var(--line); border-radius:10px; font-size:14px; }
-  .choice.correct { border-color:var(--green); background:#F3FAF4; }
-  .letter { font-weight:900; color:var(--blue); }
-  .explain { white-space:pre-wrap; background:white; border:1px solid var(--line); border-radius:10px; padding:12px; line-height:1.55; font-size:13px; color:#374151; max-height:260px; overflow:auto; }
-  .preview-nav { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 0; }
-  .db-controls { display:grid; grid-template-columns:1fr 220px 220px; gap:10px; margin-bottom:14px; }
-  @media(max-width:900px){ .db-controls { grid-template-columns:1fr; } }
-  .qrow { border:1px solid var(--line); border-radius:14px; padding:14px; background:#FBFBFA; margin-bottom:10px; display:grid; grid-template-columns:1fr auto; gap:12px; }
-  .qrow-title { font-size:14px; font-weight:800; color:#1F2937; line-height:1.35; }
-  .qrow-stem { font-size:12.5px; color:#6B7280; margin-top:6px; line-height:1.45; }
-  .qrow-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-  .qrow-actions { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
-  .mini { font-size:12px; padding:7px 10px; }
-  .bulk-zone { border:1px solid #F2C5C5; background:#FFF7F7; border-radius:14px; padding:16px; margin-top:16px; }
-  .bulk-grid { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; }
-  @media(max-width:700px){ .bulk-grid { grid-template-columns:1fr; } }
-
-  .quality-panel { border:1px solid var(--line); border-radius:14px; background:#FBFBFA; padding:14px; margin-top:14px; }
-  .flaw-row { border:1px solid var(--line); background:white; border-radius:12px; padding:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr auto; gap:10px; }
-  .flaw-title { font-weight:800; font-size:13.5px; color:#1F2937; line-height:1.35; }
-  .flaw-list { margin:6px 0 0; padding-left:18px; color:#8A2520; font-size:12.5px; line-height:1.45; }
-  .edit-banner { display:none; border:1px solid #D7E6F7; background:#F4F8FD; color:#315272; border-radius:14px; padding:12px 14px; margin-bottom:12px; font-size:13px; }
-  .edit-banner.show { display:block; }
-
+  code { font-family:var(--mono); font-size:12px; background:var(--paper2); padding:1px 5px; border-radius:2px; }
+  .checkline { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink2); } .checkline input { width:auto; }
 </style>
 </head>
 <body>
-  <div class="top">
-    <div class="brand">MEDCHANIC<span>.MD</span> Question Importer</div>
-    <div class="user" id="userBox">Checking admin access…</div>
-  </div>
+<div class="top"><div class="brand">Medchanic<small>MD</small> <span style="font-weight:500;color:#bdb8ab;margin-left:10px">Question Importer v2</span></div><div class="user" id="userBox">Checking admin access…</div></div>
 
-  <div class="wrap">
-    <div id="blocked" class="card hidden">
+<div class="wrap">
+  <div id="blocked" class="card hidden"><div class="card-b"><h2 style="margin:0 0 6px">Admin access required</h2><p>This tool works only when logged in as the admin account. <a href="login.html">Log in</a>, then reload this page.</p></div></div>
+
+  <div id="app" class="hidden">
+
+    <!-- ============ 1. BANK HEALTH ============ -->
+    <div class="card">
+      <div class="card-h"><div><h2>Bank health</h2><p>The live bank scanned against the current standard. Same rules as the pipeline's validate.py.</p></div><div class="row" style="margin:0"><button class="ghost" onclick="loadBank()">Reload bank</button><button class="teal" onclick="scanBank()">Scan against standard</button></div></div>
       <div class="card-b">
-        <h1>Admin access required</h1>
-        <p>This importer only works when you are logged in as <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbb6bebfb8b3bab5b2b8b6bf9bbcb6bab2b7f5b8b4b6">[email&#160;protected]</a></strong>.</p>
-        <p><a href="index.html">Go to login</a></p>
+        <div class="stats">
+          <div class="stat"><b id="stTotal">–</b><span>live questions</span></div>
+          <div class="stat"><b id="stPass">–</b><span>pass standard</span></div>
+          <div class="stat"><b id="stFail">–</b><span>fail standard</span></div>
+          <div class="stat"><b id="stSystems">–</b><span>systems covered</span></div>
+          <div class="stat"><b id="stKeep">–</b><span>on keep list</span></div>
+          <div class="stat"><span style="display:block;margin-bottom:6px">answer letters</span><div class="letters" id="stLetters"></div></div>
+        </div>
+        <div id="scanReport" class="log" style="min-height:60px">Load the bank, then scan.</div>
       </div>
     </div>
 
-    <div id="app" class="hidden">
-      <div class="card">
-        <div class="card-h">
+    <!-- ============ 2. IMPORT ============ -->
+    <div class="card">
+      <div class="card-h"><div><h2>Import a validated batch</h2><p>Paste or load the batch JSON. Nothing is written unless every item passes the standard and the batch passes the letter-balance rule.</p></div><span class="pill" id="countPill">DB: …</span></div>
+      <div class="card-b">
+        <div class="grid">
           <div>
-            <h1>Bulk load questions into Appwrite</h1>
-            <p style="margin:8px 0 0;">Paste JSON or choose a JSON file. Preview the mapping before importing.</p>
-          </div>
-          <div><span class="pill" id="countPill">Current DB: …</span></div>
-        </div>
-        <div class="card-b">
-          <div class="note">
-            <strong>New safer workflow:</strong> choose file → <strong>Validate + preview</strong> → inspect the preview → import only if the stem, choices, answer, and explanation are mapped correctly.
-          </div>
-          <div class="grid">
-            <div>
-              <label for="jsonInput">Questions JSON</label>
-              <input id="jsonFile" type="file" accept=".json,application/json" onchange="loadJsonFile(event)" style="margin-bottom:10px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif;" />
-              <div class="edit-banner" id="editBanner"></div>
-              <textarea id="jsonInput" spellcheck="false" placeholder="Paste JSON here, or choose a .json file above…"></textarea>
-              <div class="checkline">
-                <input id="skipDupes" type="checkbox" checked>
-                <span>Skip duplicate questions with the same normalized stem</span>
-              </div>
-              <div class="btnrow">
-                <button class="secondary" onclick="loadSample()">Load sample</button>
-                <button class="primary" onclick="validateOnly()">Validate + preview</button>
-                <button class="darkbtn" id="importBtn" onclick="importQuestions()">Import to database</button>
-                <button class="primary" id="updateBtn" onclick="updateSelectedQuestion()" style="display:none;">Update selected question</button>
-                <button class="secondary" id="cancelEditBtn" onclick="cancelEditQuestion()" style="display:none;">Cancel edit</button>
-                <button class="danger" onclick="clearInput()">Clear</button>
-              </div>
+            <span class="k">Batch JSON (array of questions in the v2 schema)</span>
+            <input id="jsonFile" type="file" accept=".json,application/json" onchange="loadJsonFile(event)" style="margin-bottom:8px;font-family:var(--sans)">
+            <textarea id="jsonInput" spellcheck="false" placeholder='[ { "system": "...", "subject": "...", "topic": "...", "difficulty": 2, "stem": "...", "leadIn": "...?", "choices": [{"letter":"A","text":"..."}, ...], "correct": "C", "objective": "...", "rationale": "<p>...</p>", "whyWrong": [{"letter":"A","text":"..."}, ...], "tags": ["..."] } ]'></textarea>
+            <div class="row">
+              <label class="checkline"><input type="checkbox" id="autoShuffle" checked> Rebalance answer letters before validating</label>
+              <label class="checkline"><input type="checkbox" id="skipDupes" checked> Skip near-duplicates of live stems</label>
             </div>
-            <div>
-              <label>Preview mapped question</label>
-              <div id="previewBox" class="preview">No preview yet. Load JSON and click <strong>Validate + preview</strong>.</div>
-              <div class="preview-nav">
-                <button class="secondary mini" onclick="previewPrev()">← Previous</button>
-                <span class="small" id="previewCounter">—</span>
-                <button class="secondary mini" onclick="previewNext()">Next →</button>
-              </div>
+            <div class="row">
+              <button class="teal" onclick="validateBatch()">Validate against standard</button>
+              <button class="ink" id="importBtn" onclick="importBatch()" disabled>Import passing items</button>
+              <button class="ghost" onclick="downloadValidated()" id="dlBtn" disabled>Download validated JSON</button>
+              <button class="ghost" onclick="clearInput()">Clear</button>
             </div>
+            <div id="okBox" class="box ok"></div><div id="errBox" class="box err"></div><div id="warnBox" class="box warn"></div>
+            <div id="status" class="log" style="margin-top:12px">Ready.</div>
           </div>
-          <label style="margin-top:18px;">Result / log</label>
-          <div id="status" class="status">Waiting…</div>
-          <div id="okBox" class="okBox"></div>
-          <div id="errBox" class="errorBox"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-h">
           <div>
-            <h1>QBank manager</h1>
-            <p style="margin:8px 0 0;">Browse individual database questions, inspect mapping, delete single questions, or bulk-delete a body system.</p>
+            <span class="k">Preview</span>
+            <div id="previewBox" class="preview">Validate a batch to preview it here.</div>
+            <div class="nav"><button class="ghost mini" onclick="prevItem()">← Previous</button><span id="previewCounter">—</span><button class="ghost mini" onclick="nextItem()">Next →</button></div>
           </div>
-          <button class="secondary" onclick="loadQBankManager()">Refresh QBank</button>
-        </div>
-        <div class="card-b">
-          <div class="warn">
-            <strong>Permissions:</strong> for delete actions temporarily enable <code>Users → Delete</code>; for editing/bulk fixing temporarily enable <code>Users → Update</code> on the Appwrite <code>questions</code> table. Remove them again after cleanup.
-          </div>
-          <div class="db-controls">
-            <input id="dbSearch" placeholder="Search stem/objective/id…" oninput="renderQBankList()">
-            <select id="dbSubjectFilter" onchange="renderQBankList()"><option value="">All subjects</option></select>
-            <select id="dbSystemFilter" onchange="renderQBankList()"><option value="">All systems</option></select>
-          </div>
-          <div class="btnrow" style="margin-top:0;margin-bottom:14px;">
-            <button class="primary" onclick="scanQBankQuality()">Scan for flaws</button>
-            <button class="secondary" onclick="exportFlawedQuestions()">Export flawed JSON</button>
-            <button class="darkbtn" onclick="bulkUpdateByIds()">Bulk update by IDs</button>
-            <label class="checkline" style="margin:0;"><input type="checkbox" id="showFlawedOnly" onchange="renderQBankList()"> Show flawed only</label>
-            <button class="secondary" onclick="analyzeDuplicates()">Analyze duplicates</button>
-            <button class="danger" onclick="deleteDuplicateQuestions()">Delete duplicate rows</button>
-          </div>
-          <div id="dbStats" class="small">Load the QBank to begin.</div>
-          <div id="qualityPanel" class="quality-panel" style="display:none;"></div>
-          <div id="qbankList" style="margin-top:12px;"></div>
-          <div class="preview-nav">
-            <button class="secondary mini" onclick="dbPrevPage()">← Previous page</button>
-            <span class="small" id="dbPageCounter">—</span>
-            <button class="secondary mini" onclick="dbNextPage()">Next page →</button>
-          </div>
-
-          <div class="bulk-zone">
-            <h3>Bulk delete by body system</h3>
-            <p class="small">Example: choose <strong>Microbiology (General Principles)</strong> to delete that entire body-system group. This is permanent.</p>
-            <div class="bulk-grid">
-              <div>
-                <label for="bulkSystemDelete">Body system to delete</label>
-                <select id="bulkSystemDelete"><option value="">Choose system…</option></select>
-              </div>
-              <button class="danger" onclick="deleteSystemBulk()">Delete entire system</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-b">
-          <h2>Required JSON format</h2>
-          <p>Each question should have <code>subject</code>, <code>system</code>, <code>stem</code>, <code>choices</code>, <code>correct</code>, <code>objective</code>, <code>rationale</code>, and <code>whyWrong</code>.</p>
-<pre style="background:#F5F5F3;border:1px solid #DDDAD2;border-radius:14px;padding:14px;overflow:auto;font-size:12px;">[
-  {
-    "subject": "Pathophysiology",
-    "system": "Cardiovascular System",
-    "stem": "A 62-year-old man presents with crushing substernal chest pain...\n\nWhich of the following best explains this patient's hypotension?",
-    "choices": ["Choice A", "Choice B", "Choice C", "Choice D", "Choice E"],
-    "correct": "E",
-    "objective": "Identify right ventricular infarction as a preload-dependent cause of hypotension after inferior MI.",
-    "rationale": "Right ventricular infarction commonly occurs with inferior MI due to RCA occlusion...",
-    "whyWrong": {
-      "A": "Why A is wrong.",
-      "B": "Why B is wrong.",
-      "C": "Why C is wrong.",
-      "D": "Why D is wrong."
-    }
-  }
-]</pre>
         </div>
       </div>
     </div>
+
+    <!-- ============ 3. MANAGE ============ -->
+    <div class="card">
+      <div class="card-h"><div><h2>Manage the live bank</h2><p>Search, preview, edit a single question, or run the keep-list wipe.</p></div></div>
+      <div class="card-b">
+        <div class="row" style="margin:0 0 12px">
+          <input type="search" id="dbSearch" placeholder="Search stem, objective, topic, ID" oninput="renderBank()" style="flex:2;min-width:240px">
+          <select id="dbSystem" onchange="renderBank()" style="flex:1;min-width:200px"><option value="">All systems</option></select>
+          <select id="dbStatus" onchange="renderBank()" style="flex:1;min-width:160px"><option value="">All</option><option value="fail">Failing standard</option><option value="pass">Passing standard</option><option value="keep">On keep list</option></select>
+        </div>
+        <table><thead><tr><th style="width:44%">Question</th><th>System · subject</th><th>Ans</th><th>Standard</th><th></th></tr></thead><tbody id="bankRows"><tr><td colspan="5" style="color:var(--ink3)">Load the bank.</td></tr></tbody></table>
+        <div class="nav"><button class="ghost mini" onclick="dbPage=Math.max(0,dbPage-1);renderBank()">← Previous</button><span id="dbCounter">—</span><button class="ghost mini" onclick="dbPage++;renderBank()">Next →</button></div>
+
+        <div class="kz">
+          <h3>Keep-list wipe</h3>
+          <ol class="steps">
+            <li>Load <code>keep_ids.json</code> (and optionally <code>extra_long_stem_ids.json</code>). Every ID in these files is preserved; everything else is deleted.</li>
+            <li>Click <strong>Dry run</strong>. It downloads a full backup of the bank and shows exactly what would be deleted. Nothing is changed.</li>
+            <li>Only then click <strong>Delete everything not on the keep list</strong> and type the count to confirm.</li>
+          </ol>
+          <div class="row">
+            <input id="keepFile" type="file" accept=".json" multiple onchange="loadKeepFiles(event)" style="width:auto;font-family:var(--sans)">
+            <span class="pill" id="keepPill">keep list: none loaded</span>
+            <button class="ghost" onclick="dryRunWipe()">Dry run (backup + report)</button>
+            <button class="danger solid" id="wipeBtn" onclick="runWipe()" disabled>Delete everything not on the keep list</button>
+          </div>
+          <div id="wipeLog" class="log" style="min-height:60px;margin-top:10px">No dry run yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card"><div class="card-b" style="font-size:12.5px;color:var(--ink2)">
+      <strong>Standard enforced here (identical to validate.py):</strong> stem 90–160 words with a patient age and at least one numeric datum with a unit; one-sentence lead-in ending in “?”, no true/false/except forms, no restating the stem, no population facts; exactly five single-concept options A–E, no compound options, correct option not the longest, correct text not present in the stem; objective 12–30 words; rationale 150–320 words with one <code>&lt;strong&gt;</code>; a 20–60-word reason for each of the four distractors; 2–5 tags; system/subject/topic must exist in the blueprint; no near-duplicate stems; per batch, every letter used and none above 32%.
+    </div></div>
   </div>
+</div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
+<script type="module">
 import { Client, Account, Databases, ID, Query, Permission, Role } from "https://cdn.jsdelivr.net/npm/appwrite@16/+esm";
 
-const ENDPOINT = "https://nyc.cloud.appwrite.io/v1";
-const PROJECT_ID = "6a427cd000140ae72eb1";
-const DATABASE_ID = "6a4adf000035f990a7e7";
-const COLLECTION_ID = "questions";
-const ADMIN_EMAIL = "medchanicmd@gmail.com";
-
-const SUBJECTS = new Set(['Anatomy','Behavioral science','Biochemistry','Biostatistics','Embryology','Genetics','Histology','Immunology','Microbiology','Pathology','Pathophysiology','Pharmacology','Physiology']);
-const SYSTEMS = new Set(['Allergy & Immunology','Dermatology','Cardiovascular System','Pulmonary & Critical Care','Gastrointestinal & Nutrition','Hematology & Oncology','Renal, Urinary Systems & Electrolytes','Nervous System','Rheumatology/Orthopedics & Sports','Infectious Diseases','Endocrine, Diabetes & Metabolism','Female Reproductive System & Breast','Male Reproductive System','Pregnancy, Childbirth & Puerperium','Biostatistics & Epidemiology','Ear, Nose & Throat (ENT)','Psychiatric/Behavioral & Substance Use Disorder','Poisoning & Environmental Exposure','Ophthalmology','Social Sciences (Ethics/Legal/Professional)','Miscellaneous (Multisystem)','Biochemistry (General Principles)','Genetics (General Principles)','Microbiology (General Principles)','Pathology (General Principles)','Pharmacology (General Principles)']);
+const ENDPOINT = "https://nyc.cloud.appwrite.io/v1", PROJECT_ID = "6a427cd000140ae72eb1", DATABASE_ID = "6a4adf000035f990a7e7", COLLECTION_ID = "questions", ADMIN_EMAIL = "medchanicmd@gmail.com";
+const BLUEPRINT = {"Cardiovascular System": {"target": 95, "subjects": ["Pathology", "Physiology", "Pharmacology", "Anatomy", "Embryology", "Pathophysiology"], "topics": ["Acute coronary syndromes and MI complications", "Heart failure pathophysiology", "Valvular disease and murmurs", "Cardiomyopathies", "Pericardial disease and tamponade", "Congenital heart disease (cyanotic and acyanotic)", "Arrhythmia mechanisms and ECG", "Class I–IV antiarrhythmics", "Antihypertensives and mechanisms", "Lipid-lowering drugs", "Cardiac action potentials and conduction", "Pressure–volume loops and Starling curves", "Baroreceptor and hemodynamic regulation", "Shock types and hemodynamics", "Aortic dissection and aneurysm", "Vasculitides", "Infective endocarditis", "Rheumatic fever", "Coronary anatomy and heart development", "Atherosclerosis and hyperlipidemias"]}, "Pulmonary & Critical Care": {"target": 60, "subjects": ["Pathology", "Physiology", "Pharmacology", "Anatomy", "Microbiology"], "topics": ["Obstructive lung disease (asthma, COPD)", "Restrictive lung disease and ILD", "Pulmonary embolism and DVT", "ARDS and neonatal RDS", "Pneumonias by organism", "Tuberculosis", "Lung cancers and paraneoplastic syndromes", "Pleural effusions and pneumothorax", "Ventilation–perfusion mismatch", "Oxygen–hemoglobin dissociation and hypoxemia", "Acid–base compensation (respiratory)", "Lung volumes and compliance", "Pulmonary hypertension", "Cystic fibrosis", "Asthma and COPD pharmacology", "Sleep apnea and control of breathing"]}, "Gastrointestinal & Nutrition": {"target": 80, "subjects": ["Pathology", "Physiology", "Pharmacology", "Anatomy", "Biochemistry", "Microbiology"], "topics": ["GERD, esophagitis and Barrett", "Peptic ulcer disease and H. pylori", "Gastric and esophageal cancers", "Inflammatory bowel disease", "Celiac disease and malabsorption", "Pancreatitis and pancreatic cancer", "Hepatitis viruses", "Cirrhosis and portal hypertension", "Bilirubin metabolism and jaundice", "Hereditary hemochromatosis and Wilson disease", "Gallstones and biliary disease", "Colorectal cancer and polyposis syndromes", "GI hormones and secretions", "Diarrhea by organism", "Vitamin deficiencies", "Abdominal wall and hernias", "Portal–systemic anastomoses and GI blood supply", "Liver drug metabolism and acetaminophen toxicity", "Diverticular disease, appendicitis, ischemic bowel", "Pediatric GI (pyloric stenosis, Hirschsprung, intussusception)"]}, "Renal, Urinary Systems & Electrolytes": {"target": 65, "subjects": ["Physiology", "Pathology", "Pharmacology", "Anatomy", "Embryology"], "topics": ["Glomerular filtration and clearance", "Tubular transport and diuretic sites", "Acid–base disorders and anion gap", "Renal tubular acidosis", "Sodium and water balance (SIADH, DI)", "Potassium disorders", "Nephritic syndromes", "Nephrotic syndromes", "Acute kidney injury", "Chronic kidney disease and renal osteodystrophy", "Kidney stones", "Urinary tract infection and pyelonephritis", "Renal cell carcinoma and bladder cancer", "Polycystic kidney disease", "Renin–angiotensin–aldosterone system", "Diuretics and electrolyte effects", "Renal embryology and congenital anomalies"]}, "Nervous System": {"target": 95, "subjects": ["Anatomy", "Pathology", "Pharmacology", "Physiology", "Microbiology"], "topics": ["Stroke syndromes by vessel", "Spinal cord lesions", "Brainstem lesions and cranial nerves", "Cerebellar and basal ganglia lesions", "Aphasias and cortical localization", "Seizures and antiepileptics", "Parkinson disease and treatment", "Dementias", "Demyelinating disease (MS, GBS)", "Headache syndromes", "CNS tumors adult and pediatric", "Meningitis by age and organism", "Intracranial hemorrhage types", "Neuromuscular junction disorders", "Peripheral nerve injuries and brachial plexus", "Anesthetics and opioids", "Neurotransmitter pathways", "Sleep physiology", "Eye: visual pathway and pupillary reflexes", "Hearing and vestibular", "Neural tube defects and neurocutaneous syndromes"]}, "Endocrine, Diabetes & Metabolism": {"target": 55, "subjects": ["Physiology", "Pathology", "Pharmacology", "Biochemistry"], "topics": ["Diabetes mellitus types and complications", "Diabetic ketoacidosis and HHS", "Insulin and oral hypoglycemics", "Thyroid hormone physiology", "Hypothyroidism and Hashimoto", "Hyperthyroidism and Graves", "Thyroid cancers", "Adrenal cortex disorders (Cushing, Addison, Conn)", "Congenital adrenal hyperplasia", "Pheochromocytoma and MEN syndromes", "Pituitary adenomas and hypopituitarism", "Calcium, PTH and vitamin D", "Hyperparathyroidism and hypoparathyroidism", "Signaling pathways of hormones", "Growth hormone and acromegaly"]}, "Hematology & Oncology": {"target": 80, "subjects": ["Pathology", "Pharmacology", "Biochemistry", "Physiology", "Immunology"], "topics": ["Microcytic anemias and iron studies", "Macrocytic anemias (B12, folate)", "Hemolytic anemias (intrinsic and extrinsic)", "Sickle cell disease and thalassemias", "Hemostasis and coagulation cascade", "Bleeding disorders (vWD, hemophilia, ITP, TTP, DIC)", "Thrombophilias", "Anticoagulants and antiplatelets", "Acute leukemias", "Chronic leukemias and myeloproliferative disorders", "Hodgkin and non-Hodgkin lymphomas", "Plasma cell dyscrasias", "Transfusion reactions", "Chemotherapy mechanisms and toxicities", "Tumor suppressor genes and oncogenes", "Heme synthesis and porphyrias", "Blood groups and hemolytic disease of the newborn"]}, "Musculoskeletal, Skin & Connective Tissue": {"target": 65, "subjects": ["Anatomy", "Pathology", "Pharmacology", "Biochemistry", "Immunology"], "topics": ["Upper limb nerve injuries", "Lower limb nerve injuries and gait", "Rotator cuff and knee anatomy", "Bone tumors", "Osteoporosis, osteomalacia and Paget", "Osteoarthritis vs rheumatoid arthritis", "Seronegative spondyloarthropathies", "Gout and pseudogout", "Systemic lupus erythematosus", "Scleroderma and Sjögren", "Myositis and myasthenia", "Muscle contraction and sarcomere", "Collagen synthesis and Ehlers–Danlos, osteogenesis imperfecta, Marfan", "Skin cancers", "Blistering and inflammatory skin disorders", "Skin infections and drug reactions", "Achondroplasia and pediatric bone disease", "NSAIDs, acetaminophen and gout drugs"]}, "Reproductive & Breast": {"target": 55, "subjects": ["Pathology", "Physiology", "Embryology", "Pharmacology", "Anatomy"], "topics": ["Menstrual cycle and hormonal control", "Pregnancy physiology and hCG", "Hypertensive disorders of pregnancy", "Gestational trophoblastic disease", "Ectopic pregnancy and placental abnormalities", "Polycystic ovary syndrome", "Ovarian tumors", "Endometrial and cervical pathology", "Breast pathology and cancer", "Benign prostatic hyperplasia and prostate cancer", "Testicular tumors", "Sex development disorders and chromosomal syndromes", "Genital embryology", "Erectile physiology and drugs", "Contraception and hormone therapy", "Sexually transmitted infections", "Teratogens"]}, "Infectious Diseases": {"target": 75, "subjects": ["Microbiology", "Pharmacology", "Immunology"], "topics": ["Gram-positive cocci", "Gram-positive rods and anaerobes", "Gram-negative rods (enteric)", "Gram-negative cocci and Neisseria", "Zoonotic and vector-borne bacteria", "Spirochetes", "Mycobacteria", "Bacterial toxins and mechanisms", "Bacterial genetics and resistance", "DNA viruses", "RNA viruses", "HIV structure, course and therapy", "Herpesviruses", "Fungal infections systemic and opportunistic", "Protozoa", "Helminths", "Antibiotic mechanisms and toxicities", "Antivirals and antifungals", "Vaccines and immunization principles", "Sepsis and endotoxin"]}, "Immune System": {"target": 45, "subjects": ["Immunology", "Pathology", "Pharmacology"], "topics": ["Innate vs adaptive immunity", "MHC and antigen presentation", "T-cell and B-cell development and activation", "Antibody structure, classes and isotype switching", "Complement pathways and deficiencies", "Hypersensitivity reactions I–IV", "Primary immunodeficiencies", "Transplant rejection and GVHD", "Autoantibodies", "Cytokines", "Immunosuppressants and biologics", "Vaccination and passive immunity"]}, "Behavioral Health": {"target": 40, "subjects": ["Psychiatry/Behavioral", "Pharmacology", "Physiology"], "topics": ["Mood disorders", "Psychotic disorders", "Anxiety, OCD and trauma disorders", "Personality disorders", "Substance use and withdrawal syndromes", "Antidepressants and serotonin syndrome", "Antipsychotics and extrapyramidal effects", "Lithium and mood stabilizers", "Childhood psychiatric disorders", "Eating and sleep disorders", "Defense mechanisms and conditioning", "Somatic symptom and factitious disorders"]}, "Biostatistics & Epidemiology": {"target": 45, "subjects": ["Biostatistics"], "topics": ["Sensitivity, specificity, PPV and NPV", "Likelihood ratios and pretest probability", "Study designs and their biases", "Confounding and effect modification", "Relative risk, odds ratio, NNT", "Hypothesis testing, p-values and power", "Confidence intervals", "Incidence vs prevalence", "Screening test principles and lead-time bias", "Distributions and central tendency", "Choosing statistical tests", "Clinical trial phases and randomization"]}, "Social Sciences & Ethics": {"target": 35, "subjects": ["Behavioral science"], "topics": ["Informed consent and capacity", "Confidentiality and its exceptions", "Minors and consent", "Advance directives and surrogate decision making", "Medical errors and disclosure", "Physician–patient communication scenarios", "Impaired colleagues and reporting", "End-of-life care and futility", "Health care systems, Medicare and Medicaid", "Quality improvement and patient safety"]}, "Multisystem Processes & Disorders": {"target": 55, "subjects": ["Biochemistry", "Genetics", "Pathology", "Nutrition"], "topics": ["Glycolysis, gluconeogenesis and regulation", "TCA cycle and oxidative phosphorylation", "Glycogen storage diseases", "Lysosomal storage diseases", "Fatty acid metabolism and ketogenesis", "Amino acid metabolism disorders", "Purine and pyrimidine metabolism", "Vitamins fat- and water-soluble", "Modes of inheritance and pedigrees", "Trinucleotide repeat and imprinting disorders", "Chromosomal disorders", "Hardy–Weinberg and population genetics", "DNA replication, repair and mutations", "Transcription, translation and regulation", "Cell cycle and apoptosis", "Inflammation and wound healing", "Neoplasia principles and tumor markers", "Amyloidosis"]}, "Ear, Nose & Throat (ENT)": {"target": 10, "subjects": ["Anatomy", "Pathology", "Microbiology"], "topics": ["Otitis media and externa", "Sinusitis and pharyngitis", "Head and neck anatomy", "Epistaxis and nasal disorders"]}, "Ophthalmology": {"target": 10, "subjects": ["Anatomy", "Pathology", "Pharmacology"], "topics": ["Glaucoma and its drugs", "Retinal disorders", "Conjunctivitis and keratitis", "Cataract and lens"]}, "Poisoning & Environmental Exposure": {"target": 20, "subjects": ["Pharmacology", "Pathology"], "topics": ["Toxidromes and antidotes", "Heavy metals", "Carbon monoxide and cyanide", "Alcohols (methanol, ethylene glycol)", "Burns, heat and cold injury", "Drug–drug interactions and P450"]}, "Pregnancy, Childbirth & Puerperium": {"target": 15, "subjects": ["Physiology", "Pathology", "Pharmacology"], "topics": ["Normal labor and postpartum physiology", "Postpartum hemorrhage", "Preeclampsia mechanisms", "Rh isoimmunization", "Gestational diabetes"]}};
+const CONCURRENCY = 5;
 
 const client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID);
-const account = new Account(client);
-const databases = new Databases(client);
-
-let currentUser = null;
-let existingStems = new Set();
-let previewItems = [];
-let previewIndex = 0;
-let qbankDocs = [];
-let qbankFlaws = new Map();
-let editingDocId = null;
-let dbPage = 0;
-const DB_PAGE_SIZE = 20;
-
+const account = new Account(client), databases = new Databases(client);
 const $ = id => document.getElementById(id);
-function log(msg) { $('status').textContent += `\n${msg}`; $('status').scrollTop = $('status').scrollHeight; }
-function setStatus(msg) { $('status').textContent = msg; }
-function showBox(id, msg) { $(id).textContent = msg; $(id).style.display = 'block'; }
-function hideBoxes() { $('okBox').style.display = 'none'; $('errBox').style.display = 'none'; }
-function escapeHtml(str='') { return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function stripHtml(html='') { const div = document.createElement('div'); div.innerHTML = html; return div.textContent || div.innerText || ''; }
-function textToHtml(str='') { return `<p>${escapeHtml(str).replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')}</p>`; }
+let currentUser = null, bank = [], bankFlaws = new Map(), keepIds = new Set(), validated = [], previewItems = [], previewIndex = 0, dbPage = 0, lastDryRun = null;
+const DB_PAGE = 25;
 
-function splitStemLeadIn(rawStem='') {
-  const text = String(rawStem || '').trim();
-  if (!text) return { stem: '', question: '' };
+/* ---------------- helpers ---------------- */
+const esc = (s='') => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const strip = (h='') => String(h).replace(/<[^>]+>/g, ' ');
+const words = s => (strip(s || '').match(/\w+/g) || []).length;
+const norm = s => strip(s || '').toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '').trim();
+const log = m => { $('status').textContent += '\n' + m; $('status').scrollTop = 1e9; };
+const setStatus = m => { $('status').textContent = m; };
+const box = (id, msg) => { const b = $(id); if (!msg) { b.classList.remove('show'); return; } b.textContent = msg; b.classList.add('show'); };
+const hideBoxes = () => ['okBox','errBox','warnBox'].forEach(i => box(i, ''));
+const download = (name, data) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+const sim = (a, b) => { if (!a || !b) return 0; if (a === b) return 1; const A = new Set(a.split(' ')), B = new Set(b.split(' ')); let i = 0; A.forEach(w => { if (B.has(w)) i++; }); return i / Math.max(A.size, B.size); };   // Jaccard on words; > .8 = near-duplicate
+async function pool(items, n, fn) { const out = new Array(items.length); let i = 0; await Promise.all(Array.from({ length: n }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; }
+async function withRetry(fn, tries = 3) { let err; for (let t = 0; t < tries; t++) { try { return await fn(); } catch (e) { err = e; await new Promise(r => setTimeout(r, 400 * (t + 1))); } } throw err; }
 
-  // Preferred format: vignette paragraphs, blank line, lead-in question.
-  // Accept ANY final paragraph ending in a question mark as the lead-in. This prevents repeated stems
-  // when lead-ins start with words like "Deficiency", "Mutation", or "Inhibition" instead of "Which".
-  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1])) {
-    return { stem: paras.slice(0, -1).join('\n\n'), question: paras[paras.length - 1] };
+/* ---------------- THE STANDARD (port of validate.py) ---------------- */
+const AGE_RE = /\b\d{1,2}-(?:year|month|week|day)-old\b|\bnewborn\b|\bneonate\b/i;
+const DATA_RE = /\d+(?:\.\d+)?\s?(?:mm ?Hg|mg\/dL|mEq\/L|mmol\/L|g\/dL|\/min|°C|°F|\/mm³|\/µL|\/mL|U\/L|ng\/mL|pg\/mL|µg\/dL|mIU\/mL|%|kg|cm|bpm|breaths)/i;
+const BANNED_LEADIN = /\b(which of the following is (?:true|false|correct|incorrect)|all of the following|except\b|not true|statement)/i;
+const RESTATE = /most (?:characteristic|common|typical) (?:clinical )?presentation of/i;
+const POPFACT = /\b(?:most common (?:overall )?cause of|epidemiolog|in the united states)\b/i;
+const BANNED_OPTION = /none of the above|all of the above|\b(?:a|b|c|d) and (?:b|c|d|e)\b|both\b/i;
+const PLACEHOLDER = /^\s*(incorrect|wrong|not correct|this is (?:incorrect|wrong))\.?\s*$/i;
+const median = a => { const s = [...a].sort((x, y) => x - y); return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2; };
+
+function checkQuestion(q, otherStems) {
+  const e = [];
+  const bp = BLUEPRINT[q.system];
+  if (!bp) e.push(`system not in blueprint: ${q.system}`);
+  else { if (!bp.topics.includes(q.topic)) e.push(`topic not in blueprint for ${q.system}: ${q.topic}`); if (!bp.subjects.includes(q.subject)) e.push(`subject ${q.subject} not allowed for ${q.system}`); }
+  if (![1, 2, 3].includes(q.difficulty)) e.push('difficulty must be 1, 2 or 3');
+  const stem = q.stem || '', n = words(stem);
+  if (n < 90 || n > 160) e.push(`stem ${n} words (90–160)`);
+  if (!AGE_RE.test(stem)) e.push('stem has no patient age');
+  if (!DATA_RE.test(stem)) e.push('stem has no numeric datum with a unit (vitals/labs)');
+  if (stem.includes('?')) e.push('stem contains a question mark (lead-in must be separate)');
+  const lead = (q.leadIn || '').trim();
+  if (!lead.endsWith('?') || (lead.match(/\?/g) || []).length !== 1) e.push('lead-in must be one sentence ending in ?');
+  if (BANNED_LEADIN.test(lead)) e.push(`banned lead-in form: ${lead.slice(0, 60)}`);
+  if (RESTATE.test(lead)) e.push('lead-in asks to restate the presentation already given in the stem');
+  if (POPFACT.test(lead)) e.push('lead-in asks a population fact detached from the patient');
+  const ch = q.choices || [];
+  if (ch.length !== 5 || ch.map(c => c.letter).join('') !== 'ABCDE') e.push('must have exactly five options lettered A–E');
+  const texts = ch.map(c => (c.text || '').trim());
+  if (texts.some(t => !t)) e.push('empty option');
+  if (new Set(texts.map(t => t.toLowerCase())).size !== texts.length) e.push('duplicate option text');
+  texts.forEach(t => { if (BANNED_OPTION.test(t)) e.push(`banned option: ${t}`); if (/;|\band\b.*\band\b/.test(t) || ((t.match(/,/g) || []).length >= 2 && t.split(/\s+/).length > 8)) e.push(`compound option (one concept per option): ${t.slice(0, 50)}`); });
+  const correct = q.correct;
+  if (!/^[A-E]$/.test(correct || '')) e.push('correct must be a single letter A–E');
+  else if (texts.length === 5) { const lens = texts.map(t => t.length), med = median(lens), cl = lens['ABCDE'.indexOf(correct)]; if (med && cl > 1.6 * med) e.push(`correct option is the longest (${cl} chars vs median ${med.toFixed(0)})`);
+    const ct = norm(texts['ABCDE'.indexOf(correct)]); if (ct.length > 6 && norm(stem).includes(ct)) e.push('correct answer text appears verbatim in the stem (answer given away)'); }
+  const no = words(q.objective); if (no < 12 || no > 30) e.push(`objective ${no} words (12–30)`);
+  const rat = q.rationale || '', nr = words(rat); if (nr < 150 || nr > 320) e.push(`rationale ${nr} words (150–320)`);
+  if (!rat.includes('<strong>')) e.push('rationale must bold the key term once with <strong>');
+  if (/<li>|<ul>/.test(rat)) e.push('no bullet lists inside the rationale');
+  const ww = q.whyWrong || [], wl = ww.map(w => w.letter).sort().join(''), expected = 'ABCDE'.replace(correct || '', '');
+  if (wl !== expected) e.push(`whyWrong must cover exactly the four distractors ${expected.split('').join(',')}, got ${wl.split('').join(',') || 'none'}`);
+  ww.forEach(w => { const t = w.text || '', nw = words(t); if (PLACEHOLDER.test(t)) e.push(`placeholder why-wrong for ${w.letter}`); else if (nw < 20 || nw > 60) e.push(`why-wrong ${w.letter} is ${nw} words (20–60)`); });
+  const tags = q.tags || []; if (tags.length < 2 || tags.length > 5) e.push('tags must have 2–5 entries');
+  const ns = norm(stem); for (const o of otherStems) { if (sim(ns, o) > 0.8) { e.push('near-duplicate of an existing stem'); break; } }
+  return e;
+}
+function checkBatch(batch, liveStems) {
+  const results = [], accepted = [];
+  batch.forEach((q, i) => { const errs = checkQuestion(q, liveStems.concat(accepted.map(a => norm(a.stem)))); results.push({ i, errs }); if (!errs.length) accepted.push(q); });
+  const batchErrs = [];
+  if (accepted.length >= 8) {
+    const counts = {}; accepted.forEach(q => counts[q.correct] = (counts[q.correct] || 0) + 1);
+    const [topL, topN] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (topN / accepted.length > 0.32) batchErrs.push(`HARD FAIL: answer letter ${topL} is ${topN}/${accepted.length} of accepted items (max 32%)`);
+    const missing = 'ABCDE'.split('').filter(L => !counts[L]); if (missing.length) batchErrs.push(`HARD FAIL: no item uses letter(s) ${missing.join(', ')}`);
+    const seen = new Set(); accepted.forEach(q => { const k = q.system + '|' + q.topic + '|' + norm(q.choices.find(c => c.letter === q.correct).text); if (seen.has(k)) batchErrs.push(`two items share topic and correct answer: ${q.topic}`); seen.add(k); });
   }
-
-  // Fallback for single-paragraph stems: split at the final question sentence.
-  const matches = [...text.matchAll(/(?:^|\s)([^.!?]*\?)/g)];
-  if (matches.length) {
-    const m = matches[matches.length - 1];
-    const q = m[1].trim();
-    const idx = m.index + (m[0].startsWith(' ') ? 1 : 0);
-    const stemOnly = text.slice(0, idx).trim();
-    return { stem: stemOnly, question: q };
-  }
-
-  return { stem: text, question: '' };
+  return { results, accepted, batchErrs };
+}
+function shuffleBatch(batch) {   // port of shuffle_answers.py: even letters, why-wrong follows its option
+  const L = 'ABCDE'.split(''); const targets = []; while (targets.length < batch.length) targets.push(...L); targets.length = batch.length;
+  for (let i = targets.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [targets[i], targets[j]] = [targets[j], targets[i]]; }
+  batch.forEach((q, idx) => {
+    if (!q.choices || q.choices.length !== 5 || !/^[A-E]$/.test(q.correct || '')) return;
+    const target = targets[idx]; const correctText = q.choices.find(c => c.letter === q.correct)?.text; if (correctText === undefined) return;
+    const wwByText = {}; (q.whyWrong || []).forEach(w => { const c = q.choices.find(x => x.letter === w.letter); if (c) wwByText[c.text] = w.text; });
+    let texts = q.choices.map(c => c.text); for (let i = texts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [texts[i], texts[j]] = [texts[j], texts[i]]; }
+    texts = texts.filter(t => t !== correctText); texts.splice(L.indexOf(target), 0, correctText);
+    q.choices = texts.map((t, i) => ({ letter: L[i], text: t })); q.correct = target;
+    q.whyWrong = texts.map((t, i) => t === correctText ? null : { letter: L[i], text: wwByText[t] ?? '' }).filter(Boolean);
+  });
+  return batch;
 }
 
-function looksPlaceholder(v='') {
-  return /Question Stem\s*\d+|Objective\s*\d+|Rationale\s*\d+|Explanation\s*[A-E]\b|High Yield question|\.\.\.$|^\.\.\.$/i.test(String(v || '').trim());
+/* ---------------- schema mapping (app reads: subject, system, stem, correct, objective, content{choices, rationale, whyWrong}) ---------------- */
+function toDoc(q) {
+  const stemFull = q.stem.trim() + '\n\n' + q.leadIn.trim();     // dashboard.html splits the last paragraph ending in ? as the lead-in
+  const content = JSON.stringify({ choices: q.choices, rationale: q.rationale, whyWrong: q.whyWrong, topic: q.topic, difficulty: q.difficulty, tags: q.tags, standard: 'v1' });
+  return { subject: q.subject, system: q.system, stem: stemFull, correct: q.correct, objective: q.objective, content };
+}
+function fromDoc(d) {
+  let c = {}; try { c = JSON.parse(d.content || '{}'); } catch (_) {}
+  const paras = (d.stem || '').trim().split(/\n\s*\n/); let lead = '', stem = d.stem || '';
+  if (paras.length > 1 && /\?\s*$/.test(paras[paras.length - 1])) { lead = paras.pop().trim(); stem = paras.join('\n\n'); }
+  else { const m = (d.stem || '').match(/^(.*?)([^.?!]*\?)\s*$/s); if (m) { stem = m[1].trim(); lead = m[2].trim(); } }
+  let ww = c.whyWrong || []; if (!Array.isArray(ww)) ww = Object.entries(ww).map(([letter, text]) => ({ letter, text }));
+  return { $id: d.$id, system: d.system, subject: d.subject, topic: c.topic || '', difficulty: c.difficulty || 2, stem, leadIn: lead, choices: (c.choices || []).map((x, i) => typeof x === 'string' ? { letter: 'ABCDE'[i], text: x } : x), correct: d.correct, objective: d.objective || '', rationale: c.rationale || '', whyWrong: ww.filter(w => w.letter !== d.correct), tags: c.tags || [] };
 }
 
-function normalizeStemForDedupe(stem='') { return String(stem).toLowerCase().replace(/\s+/g,' ').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").trim(); }
-function truncate(str='', n=180) { str = String(str).replace(/\s+/g,' ').trim(); return str.length > n ? str.slice(0,n) + '…' : str; }
-
-async function listAllQuestionDocs() {
-  const limit = 500;
-  let offset = 0;
-  let all = [];
-  while (true) {
-    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [Query.limit(limit), Query.offset(offset)]);
-    all = all.concat(res.documents || []);
-    const total = typeof res.total === 'number' ? res.total : all.length;
-    if (!res.documents || res.documents.length === 0 || all.length >= total || res.documents.length < limit) break;
-    offset += res.documents.length;
-  }
-  return all;
-}
-
+/* ---------------- boot / bank ---------------- */
+async function listAll() { const out = []; let offset = 0; while (true) { const r = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [Query.limit(1000), Query.offset(offset)]); out.push(...r.documents); if (r.documents.length < 1000 || out.length >= r.total) return out; offset += r.documents.length; } }
 async function boot() {
-  try {
-    const user = await account.get();
-    if (!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) throw new Error('Not admin');
-    currentUser = user;
-    $('userBox').textContent = `Logged in as ${user.email}`;
-    $('app').classList.remove('hidden');
-    await refreshExisting();
-    await loadQBankManager();
-  } catch (e) {
-    $('userBox').textContent = 'Not authorized';
-    $('blocked').classList.remove('hidden');
-  }
+  try { const u = await account.get(); if (!u || u.email.toLowerCase() !== ADMIN_EMAIL) throw 0; currentUser = u; $('userBox').textContent = 'Admin: ' + u.email; $('app').classList.remove('hidden'); await loadBank(); }
+  catch (_) { $('userBox').textContent = 'Not authorized'; $('blocked').classList.remove('hidden'); }
 }
+window.loadBank = async function () {
+  $('bankRows').innerHTML = '<tr><td colspan="5" style="color:var(--ink3)">Loading…</td></tr>';
+  bank = await listAll(); bankFlaws = new Map();
+  $('countPill').textContent = 'DB: ' + bank.length; $('stTotal').textContent = bank.length;
+  $('stSystems').textContent = new Set(bank.map(d => d.system)).size;
+  const systems = [...new Set(bank.map(d => d.system))].sort(); $('dbSystem').innerHTML = '<option value="">All systems</option>' + systems.map(s => `<option>${esc(s)}</option>`).join('');
+  renderLetters(bank.map(d => d.correct)); updateKeepStat(); dbPage = 0; renderBank();
+};
+function renderLetters(letters) { const counts = { A: 0, B: 0, C: 0, D: 0, E: 0 }; letters.forEach(L => { if (counts[L] !== undefined) counts[L]++; }); const max = Math.max(1, ...Object.values(counts)); const n = letters.length || 1; $('stLetters').innerHTML = 'ABCDE'.split('').map(L => `<div class="${counts[L] / n > .32 ? 'bad' : ''}" style="height:${counts[L] / max * 100}%" title="${L}: ${counts[L]}"><span>${L}${counts[L] ? ' ' + Math.round(counts[L] / n * 100) + '%' : ''}</span></div>`).join(''); }
+function updateKeepStat() { $('stKeep').textContent = keepIds.size ? bank.filter(d => keepIds.has(d.$id)).length + '/' + keepIds.size : '–'; }
+window.scanBank = function () {
+  bankFlaws = new Map(); const stems = bank.map(d => norm(fromDoc(d).stem));
+  bank.forEach((d, i) => { const q = fromDoc(d); const errs = checkQuestion(q, []); // dedupe checked separately for speed
+    for (let j = 0; j < i; j++) if (sim(stems[i], stems[j]) > 0.8) { errs.push('near-duplicate of ' + bank[j].$id); break; }
+    if (errs.length) bankFlaws.set(d.$id, errs); });
+  const pass = bank.length - bankFlaws.size; $('stPass').textContent = pass; $('stFail').textContent = bankFlaws.size;
+  const tally = {}; bankFlaws.forEach(errs => errs.forEach(e => { const k = e.replace(/\d+/g, 'N').split(' (')[0].slice(0, 70); tally[k] = (tally[k] || 0) + 1; }));
+  $('scanReport').textContent = `${pass}/${bank.length} pass the standard.\n\nMost common failures:\n` + Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => `  ${String(v).padStart(5)}  ${k}`).join('\n');
+  renderBank();
+};
+window.renderBank = function () {
+  const s = $('dbSearch').value.trim().toLowerCase(), sys = $('dbSystem').value, st = $('dbStatus').value;
+  const rows = bank.filter(d => { if (sys && d.system !== sys) return false; if (st === 'fail' && !bankFlaws.has(d.$id)) return false; if (st === 'pass' && (bankFlaws.has(d.$id) || !bankFlaws.size)) return false; if (st === 'keep' && !keepIds.has(d.$id)) return false;
+    if (!s) return true; const q = fromDoc(d); return [d.$id, q.stem, q.objective, q.topic, q.system, q.subject].join(' ').toLowerCase().includes(s); });
+  const pages = Math.max(1, Math.ceil(rows.length / DB_PAGE)); if (dbPage >= pages) dbPage = pages - 1; const page = rows.slice(dbPage * DB_PAGE, dbPage * DB_PAGE + DB_PAGE);
+  $('dbCounter').textContent = `${rows.length} rows · page ${dbPage + 1}/${pages}`;
+  $('bankRows').innerHTML = page.length ? page.map(d => { const q = fromDoc(d); const fl = bankFlaws.get(d.$id); const std = !bankFlaws.size ? '<span class="pill">not scanned</span>' : fl ? `<span class="pill c" title="${esc(fl.join('\n'))}">${fl.length} issue${fl.length > 1 ? 's' : ''}</span>` : '<span class="pill t">pass</span>';
+    return `<tr><td>${keepIds.has(d.$id) ? '<span class="pill a">keep</span> ' : ''}${esc(q.stem.slice(0, 150))}${q.stem.length > 150 ? '…' : ''}<div style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:3px">${esc(d.$id)}${q.topic ? ' · ' + esc(q.topic) : ''}</div></td><td>${esc(d.system)}<br><span style="color:var(--ink3)">${esc(d.subject)}</span></td><td><b>${esc(d.correct)}</b></td><td>${std}</td><td style="white-space:nowrap"><button class="ghost mini" onclick="previewDb('${d.$id}')">Preview</button> <button class="ghost mini" onclick="editDb('${d.$id}')">Edit</button> <button class="danger mini" onclick="deleteOne('${d.$id}')">Delete</button></td></tr>`; }).join('') : '<tr><td colspan="5" style="color:var(--ink3)">No matching questions.</td></tr>';
+};
 
-async function refreshExisting() {
-  existingStems = new Set();
-  try {
-    const docs = await listAllQuestionDocs();
-    docs.forEach(d => existingStems.add(normalizeStemForDedupe(d.stem || '')));
-    $('countPill').textContent = `Current DB: ${docs.length}`;
-  } catch (e) {
-    $('countPill').textContent = 'Current DB: could not load';
-  }
-}
-
-function normalizeQuestion(raw, idx) {
-  const q = { ...raw };
-  const errors = [];
-  const n = idx + 1;
-
-  q.subject = String(q.subject || '').trim();
-  q.system = String(q.system || '').trim();
-  q.stem = String(q.stem || '').trim();
-  q.correct = String(q.correct || '').trim().toUpperCase();
-  q.objective = String(q.objective || '').trim();
-  q.rationale = String(q.rationale || q.explanation || '').trim();
-
-  if (!q.subject) errors.push(`Q${n}: missing subject`);
-  if (!q.system) errors.push(`Q${n}: missing system`);
-  if (!q.stem) errors.push(`Q${n}: missing stem`);
-  if (!['A','B','C','D','E'].includes(q.correct)) errors.push(`Q${n}: correct must be A, B, C, D, or E`);
-  if (!q.objective) errors.push(`Q${n}: missing objective`);
-  if (!q.rationale) errors.push(`Q${n}: missing rationale/explanation`);
-  if (q.subject && !SUBJECTS.has(q.subject)) errors.push(`Q${n}: unknown subject "${q.subject}"`);
-  if (q.system && !SYSTEMS.has(q.system)) errors.push(`Q${n}: unknown system "${q.system}"`);
-
-  let choices = q.choices;
-  if (!Array.isArray(choices) || choices.length !== 5) {
-    errors.push(`Q${n}: choices must be an array of 5 items`);
-    choices = [];
-  } else {
-    choices = choices.map((c, i) => {
-      const letter = ['A','B','C','D','E'][i];
-      if (typeof c === 'string') return { letter, text: c.trim() };
-      return { letter: String(c.letter || letter).trim().toUpperCase(), text: String(c.text || '').trim() };
-    });
-    choices.forEach((c, i) => {
-      if (c.letter !== ['A','B','C','D','E'][i]) errors.push(`Q${n}: choice ${i+1} letter should be ${['A','B','C','D','E'][i]}`);
-      if (!c.text) errors.push(`Q${n}: choice ${c.letter} is empty`);
-    });
-  }
-
-  let whyWrong = [];
-  if (Array.isArray(q.whyWrong)) {
-    whyWrong = q.whyWrong.map((w, i) => {
-      if (typeof w === 'string') return { letter: ['A','B','C','D','E'][i], text: w.trim() };
-      return { letter: String(w.letter || '').trim().toUpperCase(), text: String(w.text || '').trim() };
-    });
-  } else if (q.whyWrong && typeof q.whyWrong === 'object') {
-    whyWrong = Object.entries(q.whyWrong).map(([letter, text]) => ({ letter: letter.trim().toUpperCase(), text: String(text || '').trim() }));
-  }
-  whyWrong = whyWrong.filter(w => w.letter && w.letter !== q.correct);
-  const wrongLetters = ['A','B','C','D','E'].filter(l => l !== q.correct);
-  wrongLetters.forEach(l => {
-    const found = whyWrong.find(w => w.letter === l && w.text);
-    if (!found) errors.push(`Q${n}: missing whyWrong for ${l}`);
-  });
-  whyWrong = wrongLetters.map(l => whyWrong.find(w => w.letter === l) || { letter:l, text:'' });
-
-  const content = JSON.stringify({ choices, rationale: textToHtml(q.rationale), whyWrong });
-  if (content.length > 5000) errors.push(`Q${n}: content too long (${content.length}/5000 chars). Shorten rationale/whyWrong.`);
-  if (q.stem.length > 10000) errors.push(`Q${n}: stem too long (${q.stem.length}/10000 chars)`);
-  if (q.objective.length > 500) errors.push(`Q${n}: objective too long (${q.objective.length}/500 chars)`);
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    doc: { subject:q.subject, system:q.system, stem:q.stem, correct:q.correct, objective:q.objective, content },
-    preview: { subject:q.subject, system:q.system, stem:q.stem, choices, correct:q.correct, objective:q.objective, rationale:q.rationale, whyWrong }
-  };
-}
-
-function parseInput() {
-  let data;
-  try { data = JSON.parse($('jsonInput').value); }
-  catch (e) { throw new Error('Invalid JSON: ' + e.message); }
-  if (!Array.isArray(data)) throw new Error('Top-level JSON must be an array: [ {question...}, {question...} ]');
-  if (data.length === 0) throw new Error('No questions found in JSON array.');
-  return data.map((q, i) => normalizeQuestion(q, i));
-}
-
+/* ---------------- preview ---------------- */
 function renderPreview() {
-  const box = $('previewBox');
-  if (!previewItems.length) {
-    box.innerHTML = 'No preview yet. Load JSON and click <strong>Validate + preview</strong>.';
-    $('previewCounter').textContent = '—';
-    return;
-  }
-  if (previewIndex < 0) previewIndex = 0;
-  if (previewIndex >= previewItems.length) previewIndex = previewItems.length - 1;
-  const item = previewItems[previewIndex];
-  const q = item.preview;
-  $('previewCounter').textContent = `${previewIndex + 1} / ${previewItems.length}`;
-  const issues = item.errors.length ? `<span class="pill red">${item.errors.length} issue(s)</span>` : '<span class="pill green">valid</span>';
-  const choicesHtml = q.choices.map(c => `<div class="choice ${c.letter === q.correct ? 'correct' : ''}"><div class="letter">${c.letter}</div><div>${escapeHtml(c.text)}</div></div>`).join('');
-  const wrongHtml = q.whyWrong.map(w => `<div><strong>${escapeHtml(w.letter)}.</strong> ${escapeHtml(w.text)}</div>`).join('');
-  box.innerHTML = `
-    <div class="preview-meta">
-      ${issues}
-      <span class="pill">${escapeHtml(q.subject || 'No subject')}</span>
-      <span class="pill">${escapeHtml(q.system || 'No system')}</span>
-      <span class="pill">Correct: ${escapeHtml(q.correct || '—')}</span>
-    </div>
-    ${item.errors.length ? `<div class="errorBox" style="display:block;margin-bottom:12px;">${escapeHtml(item.errors.join('\n'))}</div>` : ''}
-    <h3>Stem preview</h3>
-    <div class="preview-stem">${escapeHtml(splitStemLeadIn(q.stem || '').stem || '[EMPTY STEM]')}</div>
-    <h3 style="margin-top:16px;">Lead-in question</h3>
-    <div class="explain" style="font-weight:800;">${escapeHtml(splitStemLeadIn(q.stem || '').question || '[NO LEAD-IN DETECTED]')}</div>
-    <h3 style="margin-top:16px;">Choices</h3>
-    ${choicesHtml || '<div class="small">No choices parsed.</div>'}
-    <h3 style="margin-top:16px;">Objective</h3>
-    <div class="explain">${escapeHtml(q.objective || '[EMPTY OBJECTIVE]')}</div>
-    <h3 style="margin-top:16px;">Rationale / explanation</h3>
-    <div class="explain">${escapeHtml(q.rationale || '[EMPTY RATIONALE]')}</div>
-    <h3 style="margin-top:16px;">Why wrong</h3>
-    <div class="explain">${wrongHtml || '[EMPTY WHY WRONG]'}</div>
-  `;
+  const b = $('previewBox'); if (!previewItems.length) { b.innerHTML = 'Validate a batch to preview it here.'; $('previewCounter').textContent = '—'; return; }
+  previewIndex = Math.max(0, Math.min(previewIndex, previewItems.length - 1)); const { q, errs, id } = previewItems[previewIndex]; $('previewCounter').textContent = `${previewIndex + 1} / ${previewItems.length}`;
+  b.innerHTML = `<div>${id ? `<span class="pill">${esc(id)}</span>` : ''}${errs.length ? `<span class="pill c">${errs.length} issue${errs.length > 1 ? 's' : ''}</span>` : '<span class="pill t">passes standard</span>'}<span class="pill">${esc(q.system)}</span><span class="pill">${esc(q.subject)}</span><span class="pill">${esc(q.topic || '')}</span><span class="pill">difficulty ${esc(q.difficulty)}</span><span class="pill">${words(q.stem)} w stem · ${words(q.rationale)} w rationale</span></div>
+    ${errs.length ? `<div class="issues">${esc(errs.join('\n'))}</div>` : ''}
+    <h4>Stem</h4><div class="stem">${esc(q.stem).replace(/\n\n/g, '<br><br>')}</div><div class="lead">${esc(q.leadIn)}</div>
+    <h4>Options</h4>${(q.choices || []).map(c => `<div class="ch ${c.letter === q.correct ? 'correct' : ''}"><b>${c.letter}</b><div>${esc(c.text)}</div></div>`).join('')}
+    <h4>Objective</h4><div>${esc(q.objective)}</div>
+    <h4>Rationale</h4><div class="rat">${q.rationale}</div>
+    <h4>Why the others are wrong</h4>${(q.whyWrong || []).map(w => `<div class="ww"><b>${w.letter}.</b> ${esc(w.text)}</div>`).join('')}
+    <h4>Tags</h4><div>${(q.tags || []).map(t => `<span class="pill">${esc(t)}</span>`).join('')}</div>`;
 }
+window.prevItem = () => { previewIndex--; renderPreview(); }; window.nextItem = () => { previewIndex++; renderPreview(); };
+window.previewDb = id => { const d = bank.find(x => x.$id === id); if (!d) return; const q = fromDoc(d); previewItems = [{ q, errs: bankFlaws.get(id) || (bankFlaws.size ? [] : checkQuestion(q, [])), id }]; previewIndex = 0; renderPreview(); window.scrollTo({ top: $('previewBox').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); };
 
-window.previewPrev = function previewPrev() { if (previewItems.length) { previewIndex = Math.max(0, previewIndex - 1); renderPreview(); } }
-window.previewNext = function previewNext() { if (previewItems.length) { previewIndex = Math.min(previewItems.length - 1, previewIndex + 1); renderPreview(); } }
-
-window.validateOnly = function validateOnly() {
-  hideBoxes(); setStatus('Validating…');
+/* ---------------- import ---------------- */
+function parseInput() { let data; try { data = JSON.parse($('jsonInput').value); } catch (e) { throw new Error('Invalid JSON: ' + e.message); } if (!Array.isArray(data) || !data.length) throw new Error('Top-level JSON must be a non-empty array of questions.'); return data; }
+window.validateBatch = function () {
+  hideBoxes(); validated = []; $('importBtn').disabled = true; $('dlBtn').disabled = true;
   try {
-    previewItems = parseInput();
-    previewIndex = 0;
-    renderPreview();
-    const errors = previewItems.flatMap(x => x.errors);
-    const dupes = previewItems.filter(x => $('skipDupes').checked && existingStems.has(normalizeStemForDedupe(x.doc.stem))).length;
-    if (errors.length) {
-      setStatus(`Validation failed. ${errors.length} issue(s):\n\n` + errors.join('\n'));
-      showBox('errBox', 'Fix the issues before importing. Use the preview to see what was mapped incorrectly.');
-      return false;
-    }
-    setStatus(`Validation passed. ${previewItems.length} question(s) ready.${dupes ? ` ${dupes} duplicate stem(s) would be skipped.` : ''}\n\nPreview the first few questions before importing.`);
-    showBox('okBox', 'Clean. Inspect the preview, then import when ready.');
-    return true;
-  } catch (e) {
-    previewItems = []; renderPreview();
-    setStatus('Validation failed.');
-    showBox('errBox', e.message);
-    return false;
-  }
-}
-
-window.importQuestions = async function importQuestions() {
-  hideBoxes();
-  const importBtn = $('importBtn');
-  importBtn.disabled = true;
-  try {
-    const normalized = parseInput();
-    previewItems = normalized; previewIndex = 0; renderPreview();
-    const errors = normalized.flatMap(x => x.errors);
-    if (errors.length) throw new Error(errors.join('\n'));
-
-    const confirmImport = confirm(`Import ${normalized.length} question(s)? Make sure the preview mapping is correct before continuing.`);
-    if (!confirmImport) { setStatus('Import cancelled.'); return; }
-
-    setStatus(`Importing ${normalized.length} question(s)…`);
-    let saved = 0, skipped = 0, failed = 0;
-    for (let i = 0; i < normalized.length; i++) {
-      const item = normalized[i];
-      if ($('skipDupes').checked && existingStems.has(normalizeStemForDedupe(item.doc.stem))) {
-        skipped++; log(`SKIP Q${i+1}: duplicate stem`); continue;
-      }
-      try {
-        await databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), item.doc, [Permission.read(Role.any()), Permission.update(Role.user(currentUser.$id)), Permission.delete(Role.user(currentUser.$id))]);
-        existingStems.add(normalizeStemForDedupe(item.doc.stem));
-        saved++; log(`OK Q${i+1}: saved`);
-      } catch (e) {
-        failed++; log(`FAIL Q${i+1}: ${e.message || e}`);
-      }
-    }
-    await refreshExisting();
-    await loadQBankManager();
-    const summary = `Done. Saved: ${saved}. Skipped: ${skipped}. Failed: ${failed}.`;
-    log('\n' + summary);
-    showBox(failed ? 'errBox' : 'okBox', summary);
-  } catch (e) {
-    setStatus('Import stopped.');
-    showBox('errBox', e.message);
-  } finally {
-    importBtn.disabled = false;
-  }
-}
-
-function unpackDoc(doc) {
-  let content = {};
-  try { content = JSON.parse(doc.content || '{}'); } catch (_) {}
-  return {
-    id: doc.$id,
-    subject: doc.subject || '',
-    system: doc.system || '',
-    stem: doc.stem || '',
-    correct: doc.correct || '',
-    objective: doc.objective || '',
-    choices: content.choices || [],
-    rationale: stripHtml(content.rationale || ''),
-    whyWrong: content.whyWrong || []
-  };
-}
-
-async function loadQBankManager() {
-  hideBoxes();
-  $('qbankList').innerHTML = '<div class="small">Loading QBank…</div>';
-  try {
-    qbankDocs = await listAllQuestionDocs();
-    qbankDocs.sort((a,b) => (a.system || '').localeCompare(b.system || '') || (a.subject || '').localeCompare(b.subject || '') || (a.stem || '').localeCompare(b.stem || ''));
-    populateFilters();
-    dbPage = 0;
-    renderQBankList();
-  } catch (e) {
-    $('qbankList').innerHTML = '<div class="errorBox" style="display:block;">Could not load QBank: ' + escapeHtml(e.message || e) + '</div>';
-  }
-}
-window.loadQBankManager = loadQBankManager;
-
-function populateFilters() {
-  const subjects = [...new Set(qbankDocs.map(d => d.subject).filter(Boolean))].sort();
-  const systems = [...new Set(qbankDocs.map(d => d.system).filter(Boolean))].sort();
-  $('dbSubjectFilter').innerHTML = '<option value="">All subjects</option>' + subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  $('dbSystemFilter').innerHTML = '<option value="">All systems</option>' + systems.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  $('bulkSystemDelete').innerHTML = '<option value="">Choose system…</option>' + systems.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-}
-
-function getFilteredDocs() {
-  const search = $('dbSearch').value.trim().toLowerCase();
-  const subj = $('dbSubjectFilter').value;
-  const sys = $('dbSystemFilter').value;
-  return qbankDocs.filter(d => {
-    if ($('showFlawedOnly') && $('showFlawedOnly').checked && !qbankFlaws.has(d.$id)) return false;
-    if (subj && d.subject !== subj) return false;
-    if (sys && d.system !== sys) return false;
-    if (!search) return true;
-    const q = unpackDoc(d);
-    return [d.$id, q.subject, q.system, q.stem, q.objective, q.correct].join(' ').toLowerCase().includes(search);
+    let batch = parseInput();
+    if ($('autoShuffle').checked) batch = shuffleBatch(batch);
+    const liveStems = $('skipDupes').checked ? bank.map(d => norm(fromDoc(d).stem)) : [];
+    const { results, accepted, batchErrs } = checkBatch(batch, liveStems);
+    previewItems = results.map(({ i, errs }) => ({ q: batch[i], errs })); previewIndex = results.findIndex(r => r.errs.length) >= 0 ? results.findIndex(r => r.errs.length) : 0; renderPreview();
+    const failed = results.filter(r => r.errs.length);
+    const counts = {}; accepted.forEach(q => counts[q.correct] = (counts[q.correct] || 0) + 1);
+    let report = `${accepted.length}/${batch.length} items pass the standard.` + (failed.length ? `\n\nFailing items:\n` + failed.map(r => `  [${String(r.i + 1).padStart(2, '0')}] ${(batch[r.i].topic || '?').slice(0, 40)}\n` + r.errs.map(e => `       - ${e}`).join('\n')).join('\n') : '') + `\n\nAnswer letters among passing items: ` + 'ABCDE'.split('').map(L => `${L}=${counts[L] || 0}`).join('  ');
+    if (batchErrs.length) report += '\n\n' + batchErrs.join('\n');
+    setStatus(report);
+    if (batchErrs.some(e => e.startsWith('HARD FAIL'))) { box('errBox', 'Batch rejected: answer-letter balance rule failed. Enable "Rebalance answer letters" and validate again.'); return; }
+    if (!accepted.length) { box('errBox', 'Nothing passes. Fix the items above and validate again.'); return; }
+    validated = accepted; $('importBtn').disabled = false; $('dlBtn').disabled = false; $('importBtn').textContent = `Import ${accepted.length} passing item${accepted.length > 1 ? 's' : ''}`;
+    box(failed.length ? 'warnBox' : 'okBox', failed.length ? `${accepted.length} items ready to import; ${failed.length} rejected and will not be imported. Rejected slots should be regenerated, not patched by hand.` : `All ${accepted.length} items pass. Review the preview, then import.`);
+  } catch (e) { previewItems = []; renderPreview(); setStatus('Validation failed.'); box('errBox', e.message); }
+};
+window.importBatch = async function () {
+  if (!validated.length) return; hideBoxes(); $('importBtn').disabled = true;
+  if (!confirm(`Import ${validated.length} validated question(s) into the live bank?`)) { $('importBtn').disabled = false; return; }
+  setStatus(`Importing ${validated.length} items, ${CONCURRENCY} at a time…`); let saved = 0, failed = 0; const t0 = Date.now();
+  await pool(validated, CONCURRENCY, async (q, i) => {
+    try { await withRetry(() => databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), toDoc(q), [Permission.read(Role.any()), Permission.update(Role.user(currentUser.$id)), Permission.delete(Role.user(currentUser.$id))])); saved++; }
+    catch (e) { failed++; log(`FAIL [${i + 1}] ${q.topic}: ${e.message || e}`); }
+    if ((saved + failed) % 10 === 0) log(`  ${saved + failed}/${validated.length}`);
   });
-}
+  log(`\nDone in ${((Date.now() - t0) / 1000).toFixed(1)}s. Saved ${saved}, failed ${failed}.`);
+  box(failed ? 'errBox' : 'okBox', `Saved ${saved}${failed ? `, ${failed} failed (see log)` : ''}.`);
+  validated = []; $('importBtn').textContent = 'Import passing items'; await loadBank();
+};
+window.downloadValidated = () => validated.length && download(`batch_validated_${Date.now()}.json`, validated);
+window.loadJsonFile = async ev => { const f = ev.target.files?.[0]; if (!f) return; $('jsonInput').value = await f.text(); setStatus(`Loaded ${f.name}. Click Validate.`); hideBoxes(); };
+window.clearInput = () => { $('jsonInput').value = ''; $('jsonFile').value = ''; validated = []; previewItems = []; renderPreview(); $('importBtn').disabled = true; $('dlBtn').disabled = true; setStatus('Cleared.'); hideBoxes(); };
 
-window.renderQBankList = function renderQBankList() {
-  const docs = getFilteredDocs();
-  const totalPages = Math.max(1, Math.ceil(docs.length / DB_PAGE_SIZE));
-  if (dbPage >= totalPages) dbPage = totalPages - 1;
-  const start = dbPage * DB_PAGE_SIZE;
-  const pageDocs = docs.slice(start, start + DB_PAGE_SIZE);
-  $('dbStats').textContent = `${docs.length} matching row(s) out of ${qbankDocs.length} total.`;
-  $('dbPageCounter').textContent = `Page ${dbPage + 1} / ${totalPages}`;
-  if (!pageDocs.length) {
-    $('qbankList').innerHTML = '<div class="small">No matching questions.</div>';
-    return;
-  }
-  $('qbankList').innerHTML = pageDocs.map(doc => {
-    const q = unpackDoc(doc);
-    return `<div class="qrow">
-      <div>
-        <div class="qrow-title">${escapeHtml(truncate(q.stem, 145))}</div>
-        <div class="qrow-stem"><strong>Objective:</strong> ${escapeHtml(truncate(q.objective, 160))}</div>
-        <div class="qrow-meta">
-          <span class="pill">${escapeHtml(q.subject)}</span>
-          <span class="pill">${escapeHtml(q.system)}</span>
-          <span class="pill">Correct: ${escapeHtml(q.correct)}</span>
-          <span class="pill">ID: ${escapeHtml(doc.$id)}</span>
-        </div>
-      </div>
-      <div class="qrow-actions">
-        <button class="secondary mini" onclick="previewDbQuestion('${doc.$id}')">Preview</button>
-        <button class="primary mini" onclick="editQuestionById('${doc.$id}')">Edit</button>
-        <button class="danger mini" onclick="deleteQuestionById('${doc.$id}')">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
-}
+/* ---------------- edit / delete one ---------------- */
+window.editDb = id => { const d = bank.find(x => x.$id === id); if (!d) return; const q = fromDoc(d); $('jsonInput').value = JSON.stringify([{ $id: id, ...q }], null, 2); setStatus(`Editing ${id}. Fix the JSON, click Validate, then Import (it will update this row in place because $id is present).`); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+const _origImport = window.importBatch;
+window.importBatch = async function () {   // update-in-place when items carry $id
+  const withIds = validated.filter(q => q.$id);
+  if (!withIds.length) return _origImport();
+  if (!confirm(`Update ${withIds.length} existing question(s) in place?`)) return;
+  let ok = 0, bad = 0; for (const q of withIds) { try { await withRetry(() => databases.updateDocument(DATABASE_ID, COLLECTION_ID, q.$id, toDoc(q))); ok++; } catch (e) { bad++; log(`FAIL ${q.$id}: ${e.message}`); } }
+  box(bad ? 'errBox' : 'okBox', `Updated ${ok}${bad ? `, ${bad} failed` : ''}.`); validated = []; await loadBank();
+};
+window.deleteOne = async id => { const d = bank.find(x => x.$id === id); if (!d || !confirm(`Delete this question permanently?\n\n${fromDoc(d).stem.slice(0, 200)}`)) return; try { await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id); bank = bank.filter(x => x.$id !== id); renderBank(); $('countPill').textContent = 'DB: ' + bank.length; $('stTotal').textContent = bank.length; } catch (e) { alert('Delete failed: ' + e.message); } };
 
-window.dbPrevPage = function dbPrevPage() { dbPage = Math.max(0, dbPage - 1); renderQBankList(); }
-window.dbNextPage = function dbNextPage() { const total = Math.max(1, Math.ceil(getFilteredDocs().length / DB_PAGE_SIZE)); dbPage = Math.min(total - 1, dbPage + 1); renderQBankList(); }
-
-window.previewDbQuestion = function previewDbQuestion(id) {
-  const doc = qbankDocs.find(d => d.$id === id);
-  if (!doc) return;
-  const q = unpackDoc(doc);
-  const choicesHtml = q.choices.map(c => `<div class="choice ${c.letter === q.correct ? 'correct' : ''}"><div class="letter">${escapeHtml(c.letter)}</div><div>${escapeHtml(c.text)}</div></div>`).join('');
-  const wrongHtml = q.whyWrong.map(w => `<div><strong>${escapeHtml(w.letter)}.</strong> ${escapeHtml(w.text)}</div>`).join('');
-  $('previewBox').innerHTML = `
-    <div class="preview-meta">
-      <span class="pill">DB row</span>
-      <span class="pill">${escapeHtml(q.subject)}</span>
-      <span class="pill">${escapeHtml(q.system)}</span>
-      <span class="pill">Correct: ${escapeHtml(q.correct)}</span>
-      <span class="pill">ID: ${escapeHtml(id)}</span>
-    </div>
-    <h3>Stem preview</h3><div class="preview-stem">${escapeHtml(splitStemLeadIn(q.stem || '').stem || '[EMPTY STEM]')}</div>
-    <h3 style="margin-top:16px;">Lead-in question</h3><div class="explain" style="font-weight:800;">${escapeHtml(splitStemLeadIn(q.stem || '').question || '[NO LEAD-IN DETECTED]')}</div>
-    <h3 style="margin-top:16px;">Choices</h3>${choicesHtml}
-    <h3 style="margin-top:16px;">Objective</h3><div class="explain">${escapeHtml(q.objective || '[EMPTY OBJECTIVE]')}</div>
-    <h3 style="margin-top:16px;">Rationale / explanation</h3><div class="explain">${escapeHtml(q.rationale || '[EMPTY RATIONALE]')}</div>
-    <h3 style="margin-top:16px;">Why wrong</h3><div class="explain">${wrongHtml || '[EMPTY WHY WRONG]'}</div>`;
-  $('previewCounter').textContent = 'DB preview';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-window.deleteQuestionById = async function deleteQuestionById(id) {
-  const doc = qbankDocs.find(d => d.$id === id);
-  if (!doc) return;
-  const q = unpackDoc(doc);
-  const ok = confirm(`Delete this question permanently?\n\n${truncate(q.stem, 220)}`);
-  if (!ok) return;
-  try {
-    await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id);
-    qbankDocs = qbankDocs.filter(d => d.$id !== id);
-    existingStems.delete(normalizeStemForDedupe(doc.stem || ''));
-    renderQBankList();
-    $('countPill').textContent = `Current DB: ${qbankDocs.length}`;
-    setStatus(`Deleted question ${id}`);
-  } catch (e) {
-    showBox('errBox', 'Delete failed: ' + (e.message || e));
-  }
-}
-
-window.deleteSystemBulk = async function deleteSystemBulk() {
-  const system = $('bulkSystemDelete').value;
-  if (!system) { alert('Choose a system first.'); return; }
-  const docs = qbankDocs.filter(d => d.system === system);
-  if (!docs.length) { alert('No questions found for this system.'); return; }
-  const confirmText = prompt(`This will permanently delete ${docs.length} question(s) from:\n\n${system}\n\nType DELETE to confirm.`);
-  if (confirmText !== 'DELETE') return;
-  setStatus(`Deleting ${docs.length} question(s) from ${system}…`);
-  let deleted = 0, failed = 0;
-  for (const doc of docs) {
-    try {
-      await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, doc.$id);
-      deleted++; log(`DELETED ${doc.$id}`);
-    } catch (e) {
-      failed++; log(`FAILED ${doc.$id}: ${e.message || e}`);
-    }
-  }
-  await refreshExisting();
-  await loadQBankManager();
-  const summary = `Bulk delete complete. Deleted: ${deleted}. Failed: ${failed}.`;
-  log('\n' + summary);
-  showBox(failed ? 'errBox' : 'okBox', summary);
-}
-
-window.analyzeDuplicates = async function analyzeDuplicates() {
-  hideBoxes(); setStatus('Analyzing duplicate stems…');
-  try {
-    if (!qbankDocs.length) qbankDocs = await listAllQuestionDocs();
-    const bySystem = {};
-    const groups = new Map();
-    for (const doc of qbankDocs) {
-      bySystem[doc.system || 'Unknown'] = (bySystem[doc.system || 'Unknown'] || 0) + 1;
-      const key = normalizeStemForDedupe(doc.stem || '');
-      if (!key) continue;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(doc);
-    }
-    const duplicateGroups = [...groups.values()].filter(g => g.length > 1);
-    const duplicateRows = duplicateGroups.reduce((sum, g) => sum + g.length - 1, 0);
-    const systemLines = Object.entries(bySystem).sort((a,b)=>b[1]-a[1]).map(([s,c]) => `${s}: ${c}`).join('\n');
-    const sample = duplicateGroups.slice(0, 10).map((g,i) => `${i+1}. ${g.length} copies — ${truncate(g[0].stem, 110)}`).join('\n');
-    setStatus(`Total rows: ${qbankDocs.length}\n\nCounts by system:\n${systemLines}\n\nDuplicate groups: ${duplicateGroups.length}\nExtra duplicate rows that can be deleted: ${duplicateRows}\n\n${sample ? 'Sample duplicate groups:\n' + sample : 'No duplicates detected.'}`);
-    showBox(duplicateRows ? 'errBox' : 'okBox', duplicateRows ? `Found ${duplicateRows} extra duplicate row(s).` : 'No duplicate rows detected.');
-  } catch(e) { showBox('errBox', e.message || 'Could not analyze duplicates.'); }
-}
-
-window.deleteDuplicateQuestions = async function deleteDuplicateQuestions() {
-  hideBoxes();
-  const ok = confirm('Delete duplicate rows with the same stem and keep one copy of each?');
-  if (!ok) return;
-  try {
-    if (!qbankDocs.length) qbankDocs = await listAllQuestionDocs();
-    const groups = new Map();
-    for (const doc of qbankDocs) {
-      const key = normalizeStemForDedupe(doc.stem || '');
-      if (!key) continue;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(doc);
-    }
-    const toDelete = [];
-    for (const group of groups.values()) if (group.length > 1) toDelete.push(...group.slice(1));
-    if (!toDelete.length) { setStatus('No duplicate rows detected.'); return; }
-    setStatus(`Deleting ${toDelete.length} duplicate row(s)…`);
-    let deleted = 0, failed = 0;
-    for (const doc of toDelete) {
-      try { await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, doc.$id); deleted++; log(`DELETED ${doc.$id}`); }
-      catch(e) { failed++; log(`FAILED ${doc.$id}: ${e.message || e}`); }
-    }
-    await refreshExisting(); await loadQBankManager();
-    const summary = `Done. Deleted: ${deleted}. Failed: ${failed}.`;
-    log('\n' + summary);
-    showBox(failed ? 'errBox' : 'okBox', summary);
-  } catch(e) { showBox('errBox', e.message || 'Could not delete duplicates.'); }
-}
-
-
-function detectQuestionFlaws(doc, allDocs = []) {
-  const flaws = [];
-  const q = unpackDoc(doc);
-  const split = splitStemLeadIn(q.stem || '');
-  const norm = normalizeStemForDedupe(q.stem || '');
-  const dupCount = allDocs.filter(d => normalizeStemForDedupe(d.stem || '') === norm).length;
-
-  if (!q.subject || !SUBJECTS.has(q.subject)) flaws.push(`Unknown/missing subject: ${q.subject || 'empty'}`);
-  if (!q.system || !SYSTEMS.has(q.system)) flaws.push(`Unknown/missing system: ${q.system || 'empty'}`);
-  if (!q.stem || q.stem.length < 25) flaws.push('Stem is missing or suspiciously short.');
-  if (looksPlaceholder(q.stem)) flaws.push('Stem appears to contain placeholder text.');
-  if (!split.question || !/\?\s*$/.test(split.question)) flaws.push('No clear lead-in question detected at end of stem.');
-  if (split.stem && normalizeStemForDedupe(split.stem).includes(normalizeStemForDedupe(split.question)) && split.question.length > 20) flaws.push('Lead-in may be repeated inside the stem.');
-
-  if (!Array.isArray(q.choices) || q.choices.length !== 5) flaws.push(`Expected 5 choices, found ${q.choices ? q.choices.length : 0}.`);
-  if (Array.isArray(q.choices)) {
-    const simpleLetters = q.choices.filter(c => /^[A-E]$/.test(String(c.text || c))).length;
-    if (simpleLetters >= 3) flaws.push('Choices look like placeholders (A/B/C/D/E).');
-    const choiceTexts = q.choices.map(c => normalizeStemForDedupe(c.text || c)).filter(Boolean);
-    if (new Set(choiceTexts).size !== choiceTexts.length) flaws.push('Duplicate answer choices detected.');
-    q.choices.forEach(c => { if (looksPlaceholder(c.text || c)) flaws.push(`Choice ${c.letter || ''} appears placeholder.`); });
-  }
-
-  if (!/^[A-E]$/.test(q.correct || '')) flaws.push(`Invalid correct answer: ${q.correct || 'empty'}`);
-  if (!q.objective || q.objective.length < 15) flaws.push('Objective is missing or too short.');
-  if (looksPlaceholder(q.objective)) flaws.push('Objective appears placeholder.');
-  if (!q.rationale || q.rationale.length < 40) flaws.push('Rationale/explanation is missing or too short.');
-  if (looksPlaceholder(q.rationale)) flaws.push('Rationale appears placeholder.');
-
-  if (!Array.isArray(q.whyWrong) || q.whyWrong.length < 4) flaws.push('whyWrong is missing or incomplete.');
-  if (Array.isArray(q.whyWrong)) {
-    q.whyWrong.forEach(w => { if (!w.text || w.text.length < 10 || looksPlaceholder(w.text)) flaws.push(`whyWrong ${w.letter || ''} is missing/placeholder.`); });
-  }
-  if (dupCount > 1) flaws.push(`Duplicate stem appears ${dupCount} times.`);
-  return flaws;
-}
-
-window.scanQBankQuality = function scanQBankQuality() {
-  qbankFlaws = new Map();
-  const all = qbankDocs || [];
-  all.forEach(doc => {
-    const flaws = detectQuestionFlaws(doc, all);
-    if (flaws.length) qbankFlaws.set(doc.$id, flaws);
-  });
-  const panel = $('qualityPanel');
-  panel.style.display = 'block';
-  const flawDocs = [...qbankFlaws.entries()];
-  if (!flawDocs.length) {
-    panel.innerHTML = '<span class="pill green">No obvious flaws detected</span><div class="small" style="margin-top:8px;">This scan checks placeholders, malformed choices, missing explanations, duplicate stems, and lead-in issues.</div>';
-  } else {
-    panel.innerHTML = `<div style="margin-bottom:10px;"><span class="pill red">${flawDocs.length} flagged question(s)</span> <span class="small">Use Show flawed only, then Preview/Edit.</span></div>` + flawDocs.slice(0, 8).map(([id, flaws]) => {
-      const doc = qbankDocs.find(d => d.$id === id);
-      const q = unpackDoc(doc || {});
-      return `<div class="flaw-row"><div><div class="flaw-title">${escapeHtml(truncate(q.stem || id, 130))}</div><ul class="flaw-list">${flaws.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul></div><div><button class="secondary mini" onclick="previewDbQuestion('${id}')">Preview</button><button class="primary mini" style="margin-top:6px;" onclick="editQuestionById('${id}')">Edit</button></div></div>`;
-    }).join('') + (flawDocs.length > 8 ? `<div class="small">Showing first 8. Check "Show flawed only" to view all.</div>` : '');
-  }
-  const cb = $('showFlawedOnly');
-  if (cb) cb.checked = flawDocs.length > 0;
-  dbPage = 0;
-  renderQBankList();
-}
-
-window.editQuestionById = function editQuestionById(id) {
-  const doc = qbankDocs.find(d => d.$id === id);
-  if (!doc) return;
-  const q = unpackDoc(doc);
-  const why = {};
-  (q.whyWrong || []).forEach(w => { why[w.letter] = w.text; });
-  const source = [{
-    subject: q.subject,
-    system: q.system,
-    stem: q.stem,
-    choices: (q.choices || []).map(c => c.text),
-    correct: q.correct,
-    objective: q.objective,
-    rationale: q.rationale,
-    whyWrong: why
-  }];
-  editingDocId = id;
-  $('jsonInput').value = JSON.stringify(source, null, 2);
-  $('editBanner').innerHTML = `Editing existing question <code>${id}</code>. Fix the JSON, click <strong>Validate + preview</strong>, then <strong>Update selected question</strong>.`;
-  $('editBanner').classList.add('show');
-  $('updateBtn').style.display = 'inline-block';
-  $('cancelEditBtn').style.display = 'inline-block';
-  $('importBtn').disabled = true;
-  validateOnly();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-window.cancelEditQuestion = function cancelEditQuestion() {
-  editingDocId = null;
-  $('editBanner').classList.remove('show');
-  $('updateBtn').style.display = 'none';
-  $('cancelEditBtn').style.display = 'none';
-  $('importBtn').disabled = false;
-  clearInput();
-}
-
-window.updateSelectedQuestion = async function updateSelectedQuestion() {
-  if (!editingDocId) { alert('No question selected for editing.'); return; }
-  hideBoxes();
-  try {
-    const normalized = parseInput();
-    if (normalized.length !== 1) throw new Error('Update mode requires exactly one question object in the JSON array.');
-    const item = normalized[0];
-    if (item.errors.length) throw new Error(item.errors.join('\n'));
-    const ok = confirm('Update this existing QBank question?');
-    if (!ok) return;
-    await databases.updateDocument(DATABASE_ID, COLLECTION_ID, editingDocId, item.doc);
-    setStatus(`Updated question ${editingDocId}.`);
-    showBox('okBox', 'Question updated successfully.');
-    editingDocId = null;
-    $('editBanner').classList.remove('show');
-    $('updateBtn').style.display = 'none';
-    $('cancelEditBtn').style.display = 'none';
-    $('importBtn').disabled = false;
-    await refreshExisting();
-    await loadQBankManager();
-    scanQBankQuality();
-  } catch (e) {
-    showBox('errBox', 'Update failed: ' + (e.message || e));
-  }
-}
-
-
-function docToEditableJSON(doc, flaws = []) {
-  const q = unpackDoc(doc);
-  const whyWrongObj = {};
-  (q.whyWrong || []).forEach(w => { if (w && w.letter) whyWrongObj[w.letter] = w.text || ''; });
-  return {
-    $id: doc.$id,
-    flaws,
-    subject: q.subject,
-    system: q.system,
-    stem: q.stem,
-    choices: (q.choices || []).map(c => c.text || ''),
-    correct: q.correct,
-    objective: q.objective,
-    rationale: q.rationale,
-    whyWrong: whyWrongObj
-  };
-}
-
-function downloadJSON(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-window.exportFlawedQuestions = function exportFlawedQuestions() {
-  hideBoxes();
-  if (!qbankDocs.length) {
-    showBox('errBox', 'Load the QBank first, then scan for flaws.');
-    return;
-  }
-  if (!qbankFlaws || qbankFlaws.size === 0) {
-    scanQBankQuality();
-  }
-  const flawed = [...qbankFlaws.entries()].map(([id, flaws]) => {
-    const doc = qbankDocs.find(d => d.$id === id);
-    return doc ? docToEditableJSON(doc, flaws) : null;
-  }).filter(Boolean);
-  if (!flawed.length) {
-    showBox('okBox', 'No flawed questions to export.');
-    return;
-  }
-  downloadJSON('medchanic_flawed_questions_export.json', flawed);
-  setStatus(`Exported ${flawed.length} flawed question(s) as medchanic_flawed_questions_export.json.\n\nSend that file for repair. The $id field lets us update the exact database row later.`);
-  showBox('okBox', `Exported ${flawed.length} flawed question(s).`);
-}
-
-window.bulkUpdateByIds = async function bulkUpdateByIds() {
-  hideBoxes();
-  let arr;
-  try {
-    arr = JSON.parse($('jsonInput').value);
-  } catch (e) {
-    showBox('errBox', 'Invalid JSON: ' + e.message);
-    return;
-  }
-  if (!Array.isArray(arr) || arr.length === 0) {
-    showBox('errBox', 'Bulk update expects a JSON array of fixed questions with $id or id fields.');
-    return;
-  }
-  const missingIds = arr.filter(x => !(x.$id || x.id || x.documentId));
-  if (missingIds.length) {
-    showBox('errBox', `${missingIds.length} item(s) are missing $id/id/documentId. Use the exported flawed JSON as the repair template.`);
-    return;
-  }
-  const normalized = arr.map((q, i) => normalizeQuestion(q, i));
-  const errors = normalized.flatMap(x => x.errors);
-  if (errors.length) {
-    setStatus(`Bulk update validation failed. ${errors.length} issue(s):\n\n` + errors.join('\n'));
-    showBox('errBox', 'Fix validation errors before updating.');
-    previewItems = normalized;
-    previewIndex = 0;
-    renderPreview();
-    return;
-  }
-  const ok = confirm(`Update ${arr.length} existing QBank question(s) by ID? This will overwrite those rows.`);
-  if (!ok) return;
-  setStatus(`Bulk updating ${arr.length} question(s)…`);
-  let updated = 0, failed = 0;
-  for (let i = 0; i < arr.length; i++) {
-    const id = arr[i].$id || arr[i].id || arr[i].documentId;
-    try {
-      await databases.updateDocument(DATABASE_ID, COLLECTION_ID, id, normalized[i].doc);
-      updated++;
-      log(`UPDATED ${id}`);
-    } catch (e) {
-      failed++;
-      log(`FAILED ${id}: ${e.message || e}`);
-    }
-  }
-  await refreshExisting();
-  await loadQBankManager();
-  qbankFlaws = new Map();
-  const summary = `Bulk update complete. Updated: ${updated}. Failed: ${failed}.`;
-  log('\n' + summary);
-  showBox(failed ? 'errBox' : 'okBox', summary);
-}
-
-window.loadSample = function loadSample() {
-  $('jsonInput').value = JSON.stringify([
-    {
-      subject: "Pathophysiology",
-      system: "Cardiovascular System",
-      stem: "A 62-year-old man presents to the emergency department with crushing substernal chest pain radiating to his left arm. ECG shows ST-segment elevations in leads II, III, and aVF. He becomes hypotensive after receiving nitroglycerin. Jugular venous distention is present, and lung fields are clear.\n\nWhich of the following best explains this patient's hypotension?",
-      choices: ["Decreased left ventricular afterload", "Increased pulmonary capillary wedge pressure", "Rupture of the interventricular septum", "Papillary muscle dysfunction", "Decreased right ventricular contractility"],
-      correct: "E",
-      objective: "Recognize right ventricular infarction as a preload-dependent cause of hypotension after inferior myocardial infarction.",
-      rationale: "Inferior myocardial infarction often results from occlusion of the right coronary artery, which also supplies the right ventricle in most patients. Right ventricular infarction reduces RV contractility, lowering pulmonary blood flow and left ventricular preload.",
-      whyWrong: {
-        "A": "Nitroglycerin decreases preload more than afterload.",
-        "B": "Pulmonary capillary wedge pressure is elevated in left-sided heart failure; this patient has clear lungs.",
-        "C": "Septal rupture causes acute heart failure with a harsh new systolic murmur after MI.",
-        "D": "Papillary muscle dysfunction causes acute mitral regurgitation with pulmonary edema."
-      }
-    }
-  ], null, 2);
-  setStatus('Sample loaded. Click Validate + preview.'); hideBoxes();
-  validateOnly();
-}
-
-window.loadJsonFile = async function loadJsonFile(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  hideBoxes();
-  try {
-    const text = await file.text();
-    $('jsonInput').value = text;
-    setStatus(`Loaded file: ${file.name}. Click Validate + preview.`);
-    previewItems = []; renderPreview();
-  } catch (e) {
-    setStatus('Could not read file.');
-    showBox('errBox', e.message || 'Unknown file error');
-  }
-}
-
-window.clearInput = function clearInput() {
-  $('jsonInput').value = '';
-  $('jsonFile').value = '';
-  previewItems = [];
-  renderPreview();
-  if (editingDocId) {
-    editingDocId = null;
-    $('editBanner').classList.remove('show');
-    $('updateBtn').style.display = 'none';
-    $('cancelEditBtn').style.display = 'none';
-    $('importBtn').disabled = false;
-  }
-  setStatus('Cleared.'); hideBoxes();
-}
+/* ---------------- keep-list wipe ---------------- */
+window.loadKeepFiles = async ev => { keepIds = new Set(); for (const f of ev.target.files) { const j = JSON.parse(await f.text()); (Array.isArray(j) ? j : (j.keep_live_ids || [])).forEach(id => keepIds.add(id)); } $('keepPill').textContent = `keep list: ${keepIds.size} IDs`; updateKeepStat(); renderBank(); lastDryRun = null; $('wipeBtn').disabled = true; };
+window.dryRunWipe = async function () {
+  if (!keepIds.size) { alert('Load keep_ids.json first.'); return; }
+  bank = await listAll(); const toDelete = bank.filter(d => !keepIds.has(d.$id)), kept = bank.filter(d => keepIds.has(d.$id)); const missing = [...keepIds].filter(id => !bank.some(d => d.$id === id));
+  download(`backup_live_${new Date().toISOString().replace(/[:.]/g, '-')}.json`, bank);
+  lastDryRun = { toDelete: toDelete.map(d => d.$id), kept: kept.length, total: bank.length };
+  const bySys = {}; toDelete.forEach(d => bySys[d.system] = (bySys[d.system] || 0) + 1);
+  $('wipeLog').textContent = `DRY RUN (nothing deleted). Backup of all ${bank.length} rows downloaded.\n\nlive: ${bank.length}   keep: ${kept.length}   delete: ${toDelete.length}` + (missing.length ? `\nwarning: ${missing.length} keep IDs not found live` : '') + `\n\nTo be deleted, by system:\n` + Object.entries(bySys).sort((a, b) => b[1] - a[1]).map(([s, n]) => `  ${String(n).padStart(5)}  ${s}`).join('\n') + `\n\nIf this is right, click the red button and type ${toDelete.length} to confirm.`;
+  $('wipeBtn').disabled = toDelete.length === 0;
+};
+window.runWipe = async function () {
+  if (!lastDryRun) { alert('Run the dry run first.'); return; }
+  const typed = prompt(`This permanently deletes ${lastDryRun.toDelete.length} questions and keeps ${lastDryRun.kept}.\n\nType the number ${lastDryRun.toDelete.length} to confirm.`);
+  if (typed !== String(lastDryRun.toDelete.length)) { $('wipeLog').textContent += '\n\nCancelled: confirmation did not match.'; return; }
+  $('wipeBtn').disabled = true; const ids = lastDryRun.toDelete; let done = 0, failed = []; const t0 = Date.now();
+  $('wipeLog').textContent = `Deleting ${ids.length}…`;
+  await pool(ids, CONCURRENCY, async id => { try { await withRetry(() => databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id)); done++; } catch (e) { failed.push([id, e.message]); } if ((done + failed.length) % 50 === 0) $('wipeLog').textContent = `Deleting… ${done + failed.length}/${ids.length} (${failed.length} failed)`; });
+  await loadBank();
+  $('wipeLog').textContent = `Done in ${((Date.now() - t0) / 1000).toFixed(0)}s. Deleted ${done}, failed ${failed.length}. Remaining in bank: ${bank.length} (expected ${lastDryRun.kept}).` + (failed.length ? `\n\nFailed IDs:\n` + failed.slice(0, 20).map(f => `  ${f[0]}  ${f[1]}`).join('\n') : '');
+  if (failed.length) download('wipe_failures.json', failed); lastDryRun = null;
+};
 
 boot();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
