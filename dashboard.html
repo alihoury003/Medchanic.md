@@ -1931,10 +1931,12 @@ function unpackQuestion(doc) {
   const split = splitStemLeadIn(doc.stem || '');
   let choices = content.choices || [];
   if (Array.isArray(choices)) choices = choices.map((c, i) => { const fb = ['A', 'B', 'C', 'D', 'E'][i] || ''; if (typeof c === 'string') return { letter: fb, text: c }; return { letter: c.letter || fb, text: c.text || '' }; }); else choices = [];
+  const tbl = (content.choiceTable && Array.isArray(content.choiceTable.columns) && Array.isArray(content.choiceTable.rows) && content.choiceTable.rows.length === 5) ? content.choiceTable : null;
+  if (tbl && choices.length !== 5) choices = tbl.rows.map((r, i) => ({ letter: 'ABCDE'[i], text: tbl.columns.map((col, j) => `${col}: ${r[j]}`).join('; ') }));   // table items carry no stored option text
   let whyWrong = content.whyWrong || [];
   if (!Array.isArray(whyWrong) && whyWrong && typeof whyWrong === 'object') whyWrong = Object.entries(whyWrong).map(([letter, text]) => ({ letter, text }));
   if (!Array.isArray(whyWrong)) whyWrong = [];
-  return { id: doc.$id, subject: doc.subject || 'Miscellaneous', system: doc.system || 'Miscellaneous (Multisystem)', topic: content.topic || 'Miscellaneous', difficulty: content.difficulty || 2, labs: Array.isArray(content.labs) ? content.labs : null, image: content.image || null, cards: Array.isArray(content.cards) ? content.cards.filter(c => c && c.front) : [], stemType: content.stemType === 'experimental' ? 'experimental' : 'clinical', choiceTable: (content.choiceTable && Array.isArray(content.choiceTable.columns) && Array.isArray(content.choiceTable.rows) && content.choiceTable.rows.length === 5) ? content.choiceTable : null, rawStem: doc.stem || '', stem: split.stem || doc.stem || '', question: split.question || '', correct: doc.correct || '', objective: doc.objective || '', choices, rationale: content.rationale || '', whyWrong, used: false };
+  return { id: doc.$id, subject: doc.subject || 'Miscellaneous', system: doc.system || 'Miscellaneous (Multisystem)', topic: content.topic || 'Miscellaneous', difficulty: content.difficulty || 2, labs: Array.isArray(content.labs) ? content.labs : null, image: content.image || null, cards: Array.isArray(content.cards) ? content.cards.filter(c => c && c.front) : [], stemType: content.stemType === 'experimental' ? 'experimental' : 'clinical', choiceTable: tbl, rawStem: doc.stem || '', stem: split.stem || doc.stem || '', question: split.question || '', correct: doc.correct || '', objective: doc.objective || '', choices, rationale: content.rationale || '', whyWrong, used: false };
 }
 function normalizeStemForDedupe(stem = '') { return String(stem).toLowerCase().replace(/\s+/g, ' ').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim(); }
 async function loadDatabaseQuestions() {
@@ -1984,7 +1986,8 @@ function itemCardsHtml(q) {
   const rows = q.cards.map(c => c.type === 'cloze'
     ? `<div class="card-row"><span class="cf">${cloze(c.front)}</span>${c.back ? `<span class="cb">${esc(c.back)}</span>` : ''}</div>`
     : `<div class="card-row"><span class="cf">${esc(c.front)}</span><span class="cb">${esc(c.back || '')}</span></div>`).join('');
-  return `<div class="item-cards"><div class="why-wrong-title">Flashcards for this item <span class="cnt">${q.cards.length} in your deck</span></div>${rows}</div>`;
+  const shared = (typeof FULL_FLASHCARD_DECK !== 'undefined') ? q.cards.filter(c => { const d = FULL_FLASHCARD_DECK.find(x => x.id === String(c.id)); return d && d.qids && d.qids.length > 1; }).length : 0;
+  return `<div class="item-cards"><div class="why-wrong-title">Flashcards for this item <span class="cnt">${q.cards.length} in your deck${shared ? ` · ${shared} shared with other items` : ''}</span></div>${rows}</div>`;
 }
 function qById(id) { return questionBank.find(qq => qq.id === id); }
 function getMarkedQuestionIds() {
@@ -2788,10 +2791,15 @@ Object.assign(window, {
    There is no static deck any more; rebuildFlashcardDeck(bank) is called by the app once the bank has loaded. */
 const FULL_FLASHCARD_DECK = [];
 function rebuildFlashcardDeck(bank) {
-  const deck = [];
+  // Cards carry a pool id (content.cards[].id) and one card may be linked from several questions: it enters the deck once,
+  // keyed by that id, and remembers every question that uses it. Cards without an id (older rows) fall back to questionId:n.
+  const deck = [], byId = new Map();
   (Array.isArray(bank) ? bank : []).forEach(q => (Array.isArray(q.cards) ? q.cards : []).forEach((c, i) => {
     if (!c || !c.front) return;
-    deck.push({ id: q.id + ':' + (i + 1), qid: q.id, system: q.system, subject: q.subject, topic: q.topic || 'Miscellaneous', q: c.front, a: c.back || '', type: c.type === 'cloze' ? 'cloze' : 'basic' });
+    const id = c.id ? String(c.id) : q.id + ':' + (i + 1);
+    if (byId.has(id)) { byId.get(id).qids.push(q.id); return; }
+    const card = { id, qid: q.id, qids: [q.id], system: q.system, subject: q.subject, topic: q.topic || 'Miscellaneous', q: c.front, a: c.back || '', type: c.type === 'cloze' ? 'cloze' : 'basic' };
+    byId.set(id, card); deck.push(card);
   }));
   FULL_FLASHCARD_DECK.length = 0; FULL_FLASHCARD_DECK.push(...deck);
   if (deck.length) {   // prune progress/suspensions for cards that no longer exist (incl. the retired placeholder deck); never prune on an empty/failed load
