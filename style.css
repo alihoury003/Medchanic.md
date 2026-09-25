@@ -29,10 +29,8 @@ button { font-family: var(--sans); cursor: pointer; }
 h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.02em; line-height: 1.08; }
 
 /* ---- brand mark (shared) ---- */
-.brand, .landing-brand, .pricing-brand, .legal-brand, .auth-brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: -.01em; color: var(--ink); }
-.tri { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 18px; height: 18px; flex-shrink: 0; }
-.tri i { display: block; }
-.tri i:nth-child(1) { background: var(--teal); } .tri i:nth-child(2) { background: var(--coral); } .tri i:nth-child(3) { background: var(--amber); } .tri i:nth-child(4) { background: var(--ink); }
+.brand, .landing-brand, .pricing-brand, .legal-brand, .auth-brand { display: inline-flex; align-items: center; gap: 9px; font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: -.01em; color: var(--ink); }
+.logo-mark { height: 30px; width: auto; display: block; flex-shrink: 0; }
 .brand small, .landing-brand small, .pricing-brand small, .legal-brand small, .auth-brand small { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; background: var(--ink); color: var(--paper); padding: 3px 5px; border-radius: 2px; }
 
 /* ---- buttons ---- */
