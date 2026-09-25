@@ -477,7 +477,17 @@
   table.labs { border-collapse: collapse; margin: 14px 0 4px; font-size: 14px; min-width: 340px; }
   table.labs th { text-align: left; font-weight: 700; padding: 6px 10px; background: #EEF1F6; border: 1px solid var(--xline); }
   table.labs td { padding: 4px 10px; border: 1px solid var(--xline-2); }
-  table.labs td.v { font-family: var(--xmono); white-space: nowrap; } table.labs td.f { width: 22px; font-weight: 700; text-align: center; } table.labs td.hi { color: var(--xincorrect); } table.labs td.lo { color: var(--chrome); }
+  table.labs td.v { font-family: var(--xmono); white-space: nowrap; } table.labs td.v .ref { font-family: var(--xsans, inherit); color: var(--xink-3); font-size: 12.5px; white-space: nowrap; }
+  /* table-style options: header row + one row per letter; cells share the same grid template so columns line up */
+  .choices.has-table { display: block; min-width: 0; }
+  .choice.tabular .ctext { display: block; padding-right: 112px; }   /* room for the Correct answer / Your answer label, reserved in every row so columns stay aligned */
+  .choice.tabular .mark { position: absolute; right: 10px; top: 8px; }
+  .ct-row { display: grid; gap: 8px; align-items: start; }
+  .ct-cell { padding: 2px 6px; border-left: 1px solid var(--xline-2); font-size: 14.5px; line-height: 1.4; }
+  .ct-cell:first-child { border-left: none; }
+  .choice.head { padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid var(--xline); border-radius: 0; }
+  .choice.head .select-circle.ghost { visibility: hidden; cursor: default; }
+  .ct-head { font-weight: 700; font-size: 13px; color: var(--xink-2); text-transform: none; }
   figure.qimg { margin: 14px 0 6px; max-width: 520px; }
   figure.qimg img { display: block; width: 100%; height: auto; border: 1px solid var(--xline); background: #fff; }
   figure.qimg figcaption { font-size: 10.5px; color: var(--xink-3); margin-top: 4px; }
@@ -1090,8 +1100,8 @@ const AnkiEngine = {
       <button class="tb-mark" id="flagBtn" onclick="toggleFlag()" title="Mark this item for review"><span class="box"></span>Mark<span class="flag"></span></button>
     </div>
     <div class="tb-center">
-      <button class="tb-nav" id="prevBtn" onclick="goToItem(current-1)"><svg viewBox="0 0 22 16"><path d="M14 1 4 8l10 7z"/></svg>Previous</button>
-      <button class="tb-nav" id="nextBtn" onclick="goToItem(current+1)"><svg viewBox="0 0 22 16"><path d="M8 1l10 7-10 7z"/></svg>Next</button>
+      <button class="tb-nav" id="prevBtn" onclick="prevItem()"><svg viewBox="0 0 22 16"><path d="M14 1 4 8l10 7z"/></svg>Previous</button>
+      <button class="tb-nav" id="nextBtn" onclick="nextItem()"><svg viewBox="0 0 22 16"><path d="M8 1l10 7-10 7z"/></svg>Next</button>
     </div>
     <div class="tb-right">
       <button class="tb-tool" id="labBtn" onclick="toggleLabs()"><svg viewBox="0 0 22 20"><path d="M8 2v6l-4.5 8a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 8V2M6.5 2h9M6 14h10"/></svg>Lab Values</button>
@@ -1924,7 +1934,7 @@ function unpackQuestion(doc) {
   let whyWrong = content.whyWrong || [];
   if (!Array.isArray(whyWrong) && whyWrong && typeof whyWrong === 'object') whyWrong = Object.entries(whyWrong).map(([letter, text]) => ({ letter, text }));
   if (!Array.isArray(whyWrong)) whyWrong = [];
-  return { id: doc.$id, subject: doc.subject || 'Miscellaneous', system: doc.system || 'Miscellaneous (Multisystem)', topic: content.topic || 'Miscellaneous', difficulty: content.difficulty || 2, labs: Array.isArray(content.labs) ? content.labs : null, image: content.image || null, cards: Array.isArray(content.cards) ? content.cards.filter(c => c && c.front) : [], rawStem: doc.stem || '', stem: split.stem || doc.stem || '', question: split.question || '', correct: doc.correct || '', objective: doc.objective || '', choices, rationale: content.rationale || '', whyWrong, used: false };
+  return { id: doc.$id, subject: doc.subject || 'Miscellaneous', system: doc.system || 'Miscellaneous (Multisystem)', topic: content.topic || 'Miscellaneous', difficulty: content.difficulty || 2, labs: Array.isArray(content.labs) ? content.labs : null, image: content.image || null, cards: Array.isArray(content.cards) ? content.cards.filter(c => c && c.front) : [], stemType: content.stemType === 'experimental' ? 'experimental' : 'clinical', choiceTable: (content.choiceTable && Array.isArray(content.choiceTable.columns) && Array.isArray(content.choiceTable.rows) && content.choiceTable.rows.length === 5) ? content.choiceTable : null, rawStem: doc.stem || '', stem: split.stem || doc.stem || '', question: split.question || '', correct: doc.correct || '', objective: doc.objective || '', choices, rationale: content.rationale || '', whyWrong, used: false };
 }
 function normalizeStemForDedupe(stem = '') { return String(stem).toLowerCase().replace(/\s+/g, ' ').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim(); }
 async function loadDatabaseQuestions() {
@@ -2430,18 +2440,25 @@ function renderBlockQuestion() {
     if (showExplanation) { if (c.letter === q.correct) { cls += ' correct-answer'; mark = 'Correct answer'; } else if (c.letter === userAnswer) { cls += ' wrong-selected'; mark = 'Your answer'; } cls += ' disabled'; }
     const circleClick = showExplanation ? '' : `onclick="selectChoice('${c.letter}')"`; const textClick = showExplanation ? '' : `onclick="toggleStrike('${c.letter}')"`;
     const content = (hStore.choiceText && hStore.choiceText[c.letter] !== undefined) ? hStore.choiceText[c.letter] : c.text;
-    return `<div class="${cls}"><span class="select-circle" ${circleClick} title="Select ${c.letter}"></span><span class="letter">${c.letter}.</span><span class="ctext hl-zone${isStruck ? ' struck' : ''}" data-zone="choice-${c.letter}" ${textClick}>${content}</span>${mark ? `<span class="mark">${mark}</span>` : ''}</div>`; }).join('');
+    const tbl = q.choiceTable; const ci = 'ABCDE'.indexOf(c.letter);
+    const inner = tbl && tbl.rows[ci] ? `<span class="ct-row" style="grid-template-columns:repeat(${tbl.columns.length}, minmax(0, 1fr))">${tbl.rows[ci].map(cell => `<span class="ct-cell">${esc(String(cell))}</span>`).join('')}</span>` : content;
+    return `<div class="${cls}${tbl ? ' tabular' : ''}"><span class="select-circle" ${circleClick} title="Select ${c.letter}"></span><span class="letter">${c.letter}.</span><span class="ctext hl-zone${isStruck ? ' struck' : ''}" data-zone="choice-${c.letter}" ${textClick}>${inner}</span>${mark ? `<span class="mark">${mark}</span>` : ''}</div>`; }).join('');
+  // Table-style options (arrow patterns, factor -> function matching): a header row with the column names aligned over the cells
+  const tableHead = q.choiceTable ? `<div class="choice head tabular"><span class="select-circle ghost"></span><span class="letter"></span><span class="ctext"><span class="ct-row" style="grid-template-columns:repeat(${q.choiceTable.columns.length}, minmax(0, 1fr))">${q.choiceTable.columns.map(h => `<span class="ct-cell ct-head">${esc(String(h))}</span>`).join('')}</span></span></div>` : '';
   let explanationHtml = '';
   if (showExplanation) { const rationale = hStore.rationale !== undefined ? hStore.rationale : q.rationale;
     explanationHtml = `<div class="explanation show hl-zone" data-zone="explanation"><span class="obj-tag">${esc(q.subject)} · ${esc(q.system)}</span><div class="objective">${q.objective || ''}</div><div class="rationale">${rationale || ''}</div>${q.whyWrong && q.whyWrong.length ? `<div class="why-wrong"><div class="why-wrong-title">Why the other choices are wrong</div>${q.whyWrong.map(w => `<div class="why-row"><span class="wl">${w.letter}.</span><span>${w.text}</span></div>`).join('')}</div>` : ''}${itemCardsHtml(q)}</div>`; }
   const stemHtml = hStore.stem !== undefined ? hStore.stem : q.stem.replace(/\n\s*\n/g, '<br><br>');
   const leadHtml = q.question ? `<p class="lead hl-zone" data-zone="lead">${hStore.lead !== undefined ? hStore.lead : q.question}</p>` : '';
-  const labsHtml = q.labs && q.labs.length ? `<table class="labs"><thead><tr><th colspan="3">Laboratory studies</th></tr></thead><tbody>${q.labs.map(r => `<tr><td>${esc(r.name)}</td><td class="v">${esc(String(r.value))}${r.unit ? ' ' + esc(r.unit) : ''}</td><td class="f ${r.flag === 'H' ? 'hi' : r.flag === 'L' ? 'lo' : ''}">${r.flag === 'H' ? 'H' : r.flag === 'L' ? 'L' : ''}</td></tr>`).join('')}</tbody></table>` : '';
+  // Lab panel: value + unit only, as on the exam. Parameters on the Lab Values sheet carry no flag or range (open the sheet); off-sheet parameters show their reference range as (N …).
+  const labsHtml = q.labs && q.labs.length ? `<table class="labs"><thead><tr><th colspan="2">Laboratory studies</th></tr></thead><tbody>${q.labs.map(r => `<tr><td>${esc(r.name)}</td><td class="v">${esc(String(r.value))}${r.unit ? ' ' + esc(r.unit) : ''}${r.ref ? `<span class="ref"> (N ${esc(r.ref)})</span>` : ''}</td></tr>`).join('')}</tbody></table>` : '';
   const imgHtml = q.image && q.image.url ? `<figure class="qimg"><img src="${esc(q.image.url)}" alt="${esc(q.image.alt || '')}" loading="lazy"><figcaption>${esc(q.image.credit || '')}${q.image.licence ? ' · ' + esc(q.image.licence) : ''}</figcaption></figure>` : '';
-  $('questionArea').innerHTML = `<div class="vignette"><span class="qnum">${esc(q.subject)} · ${esc(q.system)}${q.topic ? ' · ' + esc(q.topic) : ''}</span><div class="hl-zone" data-zone="stem">${stemHtml}</div>${labsHtml}${imgHtml}${leadHtml}</div>${timeHtml}<div class="choices">${choicesHtml}</div><div class="item-actions">${!activeBlock.isNew ? `<button class="xbtn" onclick="renderBlockSummary()">Back to summary</button>` : ''}</div>${explanationHtml}`;
+  $('questionArea').innerHTML = `<div class="vignette"><span class="qnum">${esc(q.subject)} · ${esc(q.system)}${q.topic ? ' · ' + esc(q.topic) : ''}</span><div class="hl-zone" data-zone="stem">${stemHtml}</div>${labsHtml}${imgHtml}${leadHtml}</div>${timeHtml}<div class="choices${q.choiceTable ? ' has-table' : ''}">${tableHead}${choicesHtml}</div><div class="item-actions">${!activeBlock.isNew ? `<button class="xbtn" onclick="renderBlockSummary()">Back to summary</button>` : ''}</div>${explanationHtml}`;
   $('noteBtnLabel').textContent = notebookHas(qid) ? 'In notebook' : 'Notebook'; $('noteBtn').classList.toggle('active', notebookHas(qid));
   $('itemScroll').scrollTop = 0; renderNav(); if (aiOpen) renderAIPanel();
 }
+function nextItem() { goToItem(current + 1); }
+function prevItem() { goToItem(current - 1); }
 function goToItem(idx) { if (!activeBlock || idx < 0 || idx >= activeBlock.qIds.length || idx === current) return; trackCurrentQuestionTime(); current = idx; if (activeBlock.isNew) activeBlock.itemStartedAt = Date.now(); renderBlockQuestion(); }
 function renderNav() {
   const grid = $('navGrid'); if (!activeBlock) { grid.innerHTML = ''; return; }
@@ -2753,7 +2770,7 @@ async function renderAdminQList() {
 Object.assign(window, {
   goScreen, doLogout, openResetModal, closeResetModal, confirmReset, showToast,
   renderCreateScreen, toggleTag, toggleSelectAll, toggleTopic, toggleSystem, toggleExpand, toggleExpandAll, setQuestionStatus, updateQCount, generateTest, startMarkedBlock, startAreaDrill, startWeakestDrill, resumeLatestSuspended,
-  openTest, reviewTest, resumeTest, goToItem, finishBlock, confirmEnd, closeEnd, renderBlockSummary, suspendBlock, exitBlockToDashboard,
+  openTest, reviewTest, resumeTest, goToItem, nextItem, prevItem, finishBlock, confirmEnd, closeEnd, renderBlockSummary, suspendBlock, exitBlockToDashboard,
   toggleLabs, toggleAI, showSide, closeSide, filterLabs, toggleFlag, toggleMode, selectChoice, toggleStrike, openIssueModal, closeIssueModal, sendIssueReport, toggleNotebookCurrent, removeNotebook, reviewNotebookQuestion,
   renderTestsList, renderNotebook, renderDashboard, toggleRows, openExamDateModal, closeExamDateModal, saveExamDate: saveExamDateFromModal, clearExamDate,
   generateAISummary, askAIQuestion, askSuggestedAI,
