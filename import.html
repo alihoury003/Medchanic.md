@@ -95,6 +95,7 @@
             <div class="row">
               <label class="checkline"><input type="checkbox" id="autoShuffle" checked> Rebalance answer letters before validating</label>
               <label class="checkline"><input type="checkbox" id="skipDupes" checked> Skip near-duplicates of live stems</label>
+              <label class="checkline"><input type="checkbox" id="overrideLength"> Manual Override: Allow correct option length > 1.3x longest distractor</label>
             </div>
             <div class="row">
               <button class="teal" onclick="validateBatch()">Validate against standard</button>
@@ -256,7 +257,7 @@ function checkQuestion(q, otherStems) {
   const correct = q.correct;
   if (!/^[A-E]$/.test(correct || '')) e.push('correct must be a single letter A–E');
   else if (texts.length === 5 && tbl == null) { const lens = texts.map(t => t.length), med = median(lens), cl = lens['ABCDE'.indexOf(correct)]; if (med && cl > 1.6 * med) e.push(`correct option is the longest (${cl} chars vs median ${med.toFixed(0)})`);
-    const md = Math.max(...lens.filter((l, i) => 'ABCDE'[i] !== correct)); if (cl > 1.3 * md) e.push(`correct option is ${cl} chars vs longest distractor ${md} (max 1.3x): shorten it or lengthen a distractor`);
+    const md = Math.max(...lens.filter((l, i) => 'ABCDE'[i] !== correct)); if (cl > 1.3 * md && !document.getElementById('overrideLength').checked) e.push(`correct option is ${cl} chars vs longest distractor ${md} (max 1.3x): shorten it or lengthen a distractor`);
     const ct = norm(texts['ABCDE'.indexOf(correct)]); if (ct.length > 6 && norm(stem).includes(ct)) e.push('correct answer text appears verbatim in the stem (answer given away)'); }
   const no = words(q.objective); if (no < 12 || no > 30) e.push(`objective ${no} words (12–30)`);
   const rat = q.rationale || '', nr = words(rat); if (nr < 150 || nr > 320) e.push(`rationale ${nr} words (150–320)`);
@@ -511,5 +512,6 @@ window.runWipe = async function () {
 
 boot();
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43b0d7ddc27da11',t:'MTc5MDg1MzM2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
